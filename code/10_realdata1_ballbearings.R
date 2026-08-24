@@ -30,13 +30,57 @@ full <- c(17.88, 28.92, 33.00, 41.52, 42.12, 45.60, 48.40, 51.84, 51.96,
           54.12, 55.56, 67.80, 68.64, 68.64, 68.88, 84.12, 93.12, 98.64,
           105.12, 105.84, 127.92, 128.04, 173.40)
 
-## PFFC sample generated from the complete data with m = 9, k = 2,
-## R = (3, 0^8), as described in Section 6.1.
-x <- c(41.52, 42.12, 48.40, 51.84, 51.96, 55.56, 68.64, 127.92, 173.40)
-m <- length(x)
+## PFFC sample constructed from the complete data, as described in Section 6.1.
+##
+## The construction is carried out here rather than typed in, because it has to
+## obey the sampling scheme it claims to illustrate.  A first-failure censored
+## sample is the sequence of group minima, so its first element is the smallest
+## observation among all units on test, and the design must not call for more
+## units than the dataset contains.  With k = 2 the 23 endurance times form
+## eleven complete groups of two; one unit is left over and is not used.  The
+## censoring plan R = (2, 0, ..., 0) then removes the group containing the first
+## failure together with two further groups drawn at random, leaving eight
+## groups whose minima are observed in turn, for m = 9 observed failures out of
+## n = 11 groups and n*k = 22 units.
+##
+## The earlier version of this script hard-coded a sample that could not have
+## arisen this way: it began at 41.52 although the smallest observation is
+## 17.88, and its design (m = 9, R = (3, 0^8)) called for n*k = 24 units from a
+## dataset of 23.
+
+## The complete-data fit, quoted in Section 6.1 before the censoring is applied.
+fit_full <- fit_mle(full, rep(0, length(full)), 1)
+stopifnot(!is.null(fit_full))
+cat(sprintf("Complete-data MLEs: alpha = %.4f, lambda = %.4f\n",
+            fit_full$par[1], fit_full$par[2]))
+
 k <- 2
-R <- c(3, rep(0, m - 1))
+m <- 9
+R <- c(2, rep(0, m - 1))
 L <- 20
+n_grp <- m + sum(R)
+
+stopifnot(n_grp * k <= length(full))
+
+spare  <- sample(length(full), length(full) - n_grp * k)
+units  <- if (length(spare)) full[-spare] else full
+groups <- matrix(sample(units), nrow = k)      # n_grp random groups of k
+gmin   <- apply(groups, 2, min)                # first-failure time of each group
+
+alive <- seq_len(n_grp)
+x     <- numeric(m)
+for (i in seq_len(m)) {
+  j        <- alive[which.min(gmin[alive])]
+  x[i]     <- gmin[j]
+  alive    <- setdiff(alive, j)
+  if (R[i] > 0) alive <- setdiff(alive, if (length(alive) == R[i]) alive
+                                        else sample(alive, R[i]))
+}
+stopifnot(length(alive) == 0, !is.unsorted(x),
+          isTRUE(all.equal(x[1], min(units))))
+
+cat("Units set aside (not used):", if (length(spare)) full[spare] else "none", "\n")
+cat("PFFC sample:", paste(fmt(x, 2), collapse = ", "), "\n\n")
 
 cat("Ball bearing data:  m =", m, " k =", k, " n =", m + sum(R), " L =", L, "\n\n")
 
@@ -205,6 +249,15 @@ write_macros(file.path(TABLES_DIR, "values_realdata1.tex"), list(
   bbM            = as.character(m),
   bbK            = as.character(k),
   bbL            = as.character(L),
+  bbNgroups      = as.character(n_grp),
+  bbNunits       = as.character(n_grp * k),
+  bbNfull        = as.character(length(full)),
+  bbRfirst       = as.character(R[1]),
+  bbSample       = paste(fmt(x, 2), collapse = ", "),
+  bbSpare        = paste(fmt(sort(full[spare]), 2), collapse = ", "),
+  bbData         = paste(fmt(sort(full), 2), collapse = ", "),
+  bbFullAlpha    = fmt(fit_full$par[1], 3),
+  bbFullLambda   = fmt(fit_full$par[2], 2),
   bbAlphaHat     = fmt(par_hat[1], 4),
   bbAlphaSE      = fmt(se_alpha, 4),
   bbLambdaHat    = fmt(par_hat[2], 2),

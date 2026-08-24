@@ -127,3 +127,50 @@ save_both(p3, "fig3_comparison", 10, 5.2)
 
 cat("\nFigure 3 constants (quoted in the caption): lambda =", LAMBDA_FIXED,
     "in the left panel, alpha =", ALPHA_FIXED, "in the right panel, L =", L_FIG, "\n")
+
+## ---------------------------------------------------------------------------
+## Numbers that Section 2.2 and Section 2.3 quote about these curves
+## ---------------------------------------------------------------------------
+##
+## Section 2.2 makes the point that the two indexes do not always order two
+## processes the same way, and gives the peaks of the two curves in the left
+## panel and a pair of shapes at which the orderings disagree.  Section 2.3
+## states the shape above which a limit at L/lambda = 1 forces the index
+## negative.  All of these are properties of the curves plotted here, so they
+## are computed here rather than read off the figure.
+
+peak <- function(f) optimize(f, c(2.2, 60), maximum = TRUE)$maximum
+pkM  <- peak(function(a) CL_moment(c(a, LAMBDA_FIXED), L_FIG, 400))
+pkX  <- peak(function(a) CL_quantile(c(a, LAMBDA_FIXED), L_FIG))
+
+## two shapes bracketing the moment-based peak, at which the orderings differ
+aLo <- 5; aHi <- 15
+mLo <- CL_moment(c(aLo, LAMBDA_FIXED), L_FIG, 400)
+mHi <- CL_moment(c(aHi, LAMBDA_FIXED), L_FIG, 400)
+xLo <- CL_quantile(c(aLo, LAMBDA_FIXED), L_FIG)
+xHi <- CL_quantile(c(aHi, LAMBDA_FIXED), L_FIG)
+if (!((mHi > mLo) && (xHi < xLo)))
+  stop("01_figures.R: the two indexes no longer disagree at alpha = ", aLo,
+       " and ", aHi, "; the sentence in Section 2.2 must be revised.")
+
+## the shape at which the median equals lambda, i.e. h_{0.5}(alpha) = 1
+aMed <- uniroot(function(a) gie_h(0.5, a) - 1, c(1.1, 3), tol = 1e-10)$root
+
+write_macros(file.path(TABLES_DIR, "values_figures.tex"), list(
+  figLambda   = fmt(LAMBDA_FIXED, 0),
+  figAlpha    = fmt(ALPHA_FIXED, 0),
+  figL        = fmt(L_FIG, 0),
+  figPeakM    = fmt(pkM, 1),
+  figPeakX    = fmt(pkX, 1),
+  figAlphaLo  = as.character(aLo),
+  figAlphaHi  = as.character(aHi),
+  figCMlo     = fmt(mLo, 3),
+  figCMhi     = fmt(mHi, 3),
+  figCXlo     = fmt(xLo, 3),
+  figCXhi     = fmt(xHi, 3),
+  ## rounded up, so that "negative for every alpha above this" is true as stated
+  figAlphaMed = fmt(ceiling(aMed * 1000) / 1000, 3)
+), "01_figures.R")
+
+cat(sprintf("Peaks: C_L^M at alpha = %.3f, C_L^xi at alpha = %.3f\n", pkM, pkX))
+cat(sprintf("Median equals lambda at alpha = %.6f\n", aMed))

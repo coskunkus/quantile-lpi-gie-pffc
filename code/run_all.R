@@ -1,84 +1,48 @@
 ################################################################################
 ##  run_all.R
 ##
-##  Runs everything, in dependency order, from this directory.
+##  Everything, from nothing: the four Monte Carlo studies followed by the rest
+##  of the paper.  Several hours.
 ##
-##  From a terminal, with the working directory set to this folder:
-##      Rscript run_all.R quick        # validation + Table 1 + Figures 1-3 +
-##                                     # both data analyses          (minutes)
-##      Rscript run_all.R              # the above plus the simulations (hours)
+##      cd code
+##      Rscript run_all.R
 ##
-##  From the RStudio console, set the working directory to this folder first
-##  (Session > Set Working Directory > To Source File Location) and then:
-##      QUICK <- TRUE;  source("run_all.R")     # quick pass
-##      QUICK <- FALSE; source("run_all.R")     # full run
-##  The QUICK object is checked before the command-line argument, because
-##  source() passes no arguments and the full run would otherwise start by
-##  accident.
+##  This is a convenience wrapper around the two scripts that do the work, and
+##  it is almost never the one you want:
 ##
-##  The long simulations are 04, 05, 06 and 07; 05 and 06 dominate and both run
-##  in parallel by default (set PARALLEL <- FALSE inside either for a single
-##  core).  All four report progress as they go, with an estimate of the time
-##  remaining.
+##      Rscript run_simulations.R   the Monte Carlo studies of Sections 5.1-5.4
+##                                  Tables 2-8 and 11.  Hours.
 ##
-##  Output locations:
-##      results/    csv and rds files with the raw numbers
-##      ../tables/  LaTeX table fragments, \input by the manuscript
-##      ../figures/ figures, in both EPS and PDF
+##      Rscript run_paper.R         everything else -- validation, Table 1,
+##                                  Figures 1-5, both applications, and every
+##                                  number the running text quotes.  Minutes.
 ##
-##  After a full run, recompile the manuscript:
-##      cd .. && pdflatex paper_QREI_revised.tex   (three times)
+##  The simulations do not depend on anything else in the paper, and their raw
+##  output ships with this package in results/.  So unless you mean to rebuild
+##  that output from scratch, run_paper.R on its own reproduces the manuscript.
+##
+##  One dependency runs the other way: the small-sample block of Section 5.4
+##  mirrors the first application and reads its design from the macro file
+##  10_realdata1_ballbearings.R writes.  This script therefore builds the
+##  applications first, then simulates, then rebuilds what reads the results.
 ################################################################################
-
-args  <- commandArgs(trailingOnly = TRUE)
-quick <- if (exists("QUICK", inherits = TRUE)) {
-  isTRUE(QUICK)
-} else {
-  length(args) > 0 && args[1] == "quick"
-}
 
 if (!file.exists("00_gie_pffc.R"))
   stop("run_all.R must be run from the code/ directory; the working directory ",
        "is currently '", getwd(), "'.")
 
-cat(if (quick) "QUICK pass: validation, Table 1, Figures 1-3, both data analyses.\n"
-    else "FULL run: everything, including the simulations. This takes hours.\n")
+if (length(commandArgs(trailingOnly = TRUE)))
+  message("run_all.R takes no arguments; it runs everything. ",
+          "For part of it, use run_simulations.R or run_paper.R.")
 
-fast <- c("12_table1_translation.R",
-          "01_figures.R",
-          "10_realdata1_ballbearings.R",
-          "11_realdata2_guineapig.R")
-slow <- c("04_sim_bias_mse.R",
-          "05_sim_ci.R",
-          "06_sim_heavytail.R",
-          "07_sim_smallm.R")
-after <- c("08_figures_simulation.R")
-checks <- file.path("validation",
-                    c("v1_check_derivatives.R", "v2_check_invariance.R",
-                      "v3_check_moment_formula.R", "v4_check_information.R",
-                      "v5_check_information_and_mle.R"))
+cat(strrep("=", 78), "\n",
+    "run_all.R: the applications, then the simulations, then the rest.\n",
+    "           Several hours.  Ctrl-C is safe: each study writes its results\n",
+    "           as soon as it finishes.\n", strrep("=", 78), "\n", sep = "")
 
-run <- function(f) {
-  cat("\n", strrep("=", 78), "\n== ", f, "\n", strrep("=", 78), "\n", sep = "")
-  t0 <- Sys.time()
-  if (startsWith(f, "validation/")) {
-    ## the validation scripts source ../00_gie_pffc.R, so run them from there
-    owd <- getwd()
-    setwd("validation")
-    tryCatch(source(basename(f), echo = FALSE), finally = setwd(owd))
-  } else {
-    source(f, echo = FALSE)
-  }
-  cat(sprintf("\n-- %s finished in %.1f minutes\n", f,
-              as.numeric(difftime(Sys.time(), t0, units = "mins"))))
-}
+## The applications first, so that Section 5.4 mirrors the current one.
+source("10_realdata1_ballbearings.R", echo = FALSE)
+source("11_realdata2_guineapig.R",    echo = FALSE)
 
-todo <- c(checks, fast, if (!quick) c(slow, after))
-for (f in todo) run(f)
-
-cat("\n", strrep("=", 78), "\n", sep = "")
-cat("Done.  Session information:\n\n")
-print(sessionInfo())
-if (quick)
-  cat("\nNOTE: run without the 'quick' argument to regenerate the simulation",
-      "tables and Figures 4-5.\n")
+source("run_simulations.R", echo = FALSE)
+source("run_paper.R",       echo = FALSE)

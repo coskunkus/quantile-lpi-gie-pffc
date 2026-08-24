@@ -56,11 +56,13 @@ if (worst_ad < 1e-9 && worst_gl < 1e-5) {
   stop("FAIL: Eq. (3) does not match the numerical integrals.")
 }
 
-## The regularisation discussed at the start of Appendix A can also be seen
-## directly: for integer r the individual terms of the binomial expansion are
-## divergent, while their sum is finite.  The cancellation is the vanishing of
-## the (alpha-1)-st forward difference of a polynomial of degree r-1.
-cat("\nForward-difference cancellation that removes the pole (should be ~0):\n")
+## The identity on which Appendix A turns, checked directly.  An (alpha-1)-st
+## forward difference annihilates every polynomial of degree below alpha-1, so
+## the sums below vanish for every r < alpha.  In the proof this is what makes
+## the polynomial part of the partial-fraction expansion disappear and what
+## leaves the residues summing to zero, which in turn is why the integral in
+## Eq. (25) of the appendix converges.
+cat("\nForward-difference cancellation the proof relies on (should be ~0):\n")
 for (alpha in 3:8) for (r in 1:(alpha - 1)) {
   j <- 0:(alpha - 1)
   s <- sum((-1)^j * choose(alpha - 1, j) * (j + 1)^(r - 1))

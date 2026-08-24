@@ -4,9 +4,10 @@
 ##  Small-sample study matched to the first application, Section 5.4.
 ##  Produces Table 8 and writes it as a LaTeX fragment into ../tables/.
 ##
-##  The design copies the ball bearing application exactly: k = 2, censoring
-##  plan R = (3, 0, ..., 0), and parameters fixed at the values estimated from
-##  that dataset.  m is varied over {9,12,15,20,25} so that the transition from
+##  The design copies the ball bearing application exactly: the group size,
+##  the censoring plan and the parameters are read from the macro file that
+##  10_realdata1_ballbearings.R writes, so this block cannot drift out of step
+##  with the application it mirrors.  m is varied over {9,12,15,20,25} so that the transition from
 ##  the sample size actually used (m = 9) up to the smallest size in the main
 ##  design (m = 25) can be seen.
 ##
@@ -21,10 +22,18 @@ set.seed(MASTER_SEED + 7L)
 N_REP_PT <- 4000
 N_REP_CI <- 2000
 B_BOOT   <- 250
-ALPHA    <- 3.4197      # MLE from the ball bearing PFFC sample, Section 6.1
-LAMBDA   <- 155.30      # MLE from the ball bearing PFFC sample, Section 6.1
-L_LIMIT  <- 20
-K        <- 2
+## The design constants are read from the macro file written by
+## 10_realdata1_ballbearings.R rather than copied here, so that this block
+## cannot drift out of step with the application it is supposed to mirror.
+## Run 10_realdata1_ballbearings.R first.
+app <- read_macros(file.path(TABLES_DIR, "values_realdata1.tex"))
+ALPHA    <- as.numeric(app$bbAlphaHat)
+LAMBDA   <- as.numeric(app$bbLambdaHat)
+L_LIMIT  <- as.numeric(app$bbL)
+K        <- as.numeric(app$bbK)
+R_FIRST  <- as.numeric(app$bbRfirst)
+cat(sprintf("Design read from the application: alpha = %g, lambda = %g, L = %g, k = %g, R_1 = %g\n",
+            ALPHA, LAMBDA, L_LIMIT, K, R_FIRST))
 M_SET    <- c(9, 12, 15, 20, 25)
 LEVEL    <- 0.95
 N_TICK_PT <- 5
@@ -40,7 +49,7 @@ cat(sprintf("True index at the application design: C_L^xi = %.4f  (L/lambda = %.
 
 res <- with_progress_bar(length(M_SET) * (N_TICK_PT + N_TICK_CI), function(p) {
 lapply(M_SET, function(m) {
-  R <- c(3, rep(0, m - 1))
+  R <- c(R_FIRST, rep(0, m - 1))
   true <- c(ALPHA, LAMBDA)
 
   Ch <- rep(NA_real_, N_REP_PT)
@@ -105,11 +114,11 @@ con <- base::file(file.path(TABLES_DIR, "tab_smallm.tex"), open = "wt")
 wl <- function(...) writeLines(paste0(...), con)
 wl("\\begin{table}[H]"); wl("\\centering")
 wl(sprintf(paste0("\\caption{Small-sample performance at the design of the first ",
-                  "application: $k=%d$, $\\mathbf{R}=(3,0^{m-1})$, $\\alpha=%.4f$, ",
+                  "application: $k=%d$, $\\mathbf{R}=(%g,0^{m-1})$, $\\alpha=%.4f$, ",
                   "$\\lambda=%.2f$, $L=%g$, so that $L/\\lambda=%.3f$ and ",
                   "$C_L^{\\xi}=%.4f$. Bias and MSE from %d replications; AL and CP ",
                   "from %d replications with $B=%d$.}"),
-           K, ALPHA, LAMBDA, L_LIMIT, L_LIMIT / LAMBDA, C_true,
+           K, R_FIRST, ALPHA, LAMBDA, L_LIMIT, L_LIMIT / LAMBDA, C_true,
            N_REP_PT, N_REP_CI, B_BOOT))
 wl("\\label{T:smallm}"); wl("\\small")
 wl("\\begin{tabular}{l rr rr rr rr}"); wl("\\toprule")
@@ -136,6 +145,8 @@ write_macros(file.path(TABLES_DIR, "values_smallm.tex"), list(
   smAlpha    = fmt(ALPHA, 4),
   smLambda   = fmt(LAMBDA, 2),
   smL        = as.character(L_LIMIT),
+  smK        = as.character(K),
+  smRfirst   = as.character(R_FIRST),
   smRatio    = fmt(L_LIMIT / LAMBDA, 3),
   smCtrue    = fmt(C_true, 4),
   smMmin     = as.character(min(M_SET)),

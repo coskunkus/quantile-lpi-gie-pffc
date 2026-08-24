@@ -659,6 +659,19 @@ write_macros <- function(file, values, script) {
   cat("Wrote", file, "\n")
 }
 
+#' Read back a macro file written by write_macros().
+#'
+#' Lets one script use a constant another script computed, instead of the
+#' constant being copied by hand into both.  Returns a named list of strings.
+read_macros <- function(file) {
+  if (!file.exists(file))
+    stop("read_macros(): ", file, " not found. Run the script that writes it first.")
+  ln <- readLines(file, warn = FALSE)
+  m  <- regmatches(ln, regexec("^\\\\newcommand\\{\\\\([A-Za-z]+)\\}\\{(.*)\\}\\s*$", ln))
+  m  <- Filter(function(z) length(z) == 3L, m)
+  setNames(lapply(m, `[[`, 3L), vapply(m, `[[`, "", 2L))
+}
+
 ## ---------------------------------------------------------------------------
 ## 10.  Progress reporting
 ## ---------------------------------------------------------------------------

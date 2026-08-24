@@ -3,7 +3,9 @@
 **A General Quantile-Based Lifetime Performance Index and its Application to the GIE Distribution under Progressive First-Failure Censoring**
 
 This directory contains all `R` code needed to reproduce every table, figure and
-numerical statement in the paper.
+numerical statement in the paper. The same code is available publicly at
+<https://github.com/coskunkus/quantile-lpi-gie-pffc>, which is the address given
+in the concluding section of the manuscript.
 
 ## Requirements
 
@@ -23,16 +25,47 @@ R ≥ 4.1 is assumed. No other software is required.
 
 ## How to run
 
+There are two entry points, and for almost every purpose the first is the one
+you want.
+
 ```
 cd code
-Rscript run_all.R quick    # validation + figures 1-3 + both data analyses (minutes)
-Rscript run_all.R          # everything, including the simulations (hours)
+Rscript run_paper.R         # everything except the simulations   (~10 min)
+Rscript run_simulations.R   # the four Monte Carlo studies        (hours)
 ```
 
-Individual scripts can also be run on their own; each sources `00_gie_pffc.R`
-and sets its own seed, so results do not depend on execution order.
+`run_paper.R` runs the seven validation scripts, Table 1, Figures 1–3, both
+applications, Figures 4–5, and every number the running text quotes. It does
+not re-run the Monte Carlo studies of Sections 5.1–5.4 and does not rewrite the
+tables they produce (Tables 2–8 and 11). It does not need to: the raw output of
+those studies ships with this package in `results/`, and the two scripts that
+summarise them — `08_figures_simulation.R` for Figures 4–5 and
+`09_values_text.R` for the coverage averages and replication counts the prose
+quotes — read those files. So `run_paper.R` on its own reproduces the
+manuscript, and any table can be checked against the raw output it came from.
 
-After a full run, recompile the manuscript from the parent directory:
+`run_simulations.R` rebuilds `results/` from nothing. That is the only reason to
+run it. It takes several hours; `05_sim_ci.R` and `06_sim_heavytail.R` dominate
+and both run in parallel by default.
+
+One dependency runs from the applications into the simulations, not the other
+way: the small-sample block of Section 5.4 mirrors the first application exactly
+and reads its shape, scale, limit and group size from the macro file
+`10_realdata1_ballbearings.R` writes. So if the application is changed,
+`07_sim_smallm.R` has to be re-run. `run_paper.R` checks this for you: it
+compares the true index the shipped Section 5.4 block was built at with the one
+the current application implies, and says so if they have drifted apart.
+
+`run_all.R` does both, in the right order, from nothing. Several hours.
+
+Individual scripts can also be run on their own; each sources `00_gie_pffc.R`
+and sets its own seed, so results do not depend on execution order, with the one
+exception noted above (`07` reads what `10` writes).
+
+The scripts write their LaTeX output into `../tables/` and `../figures/`.
+Those directories start empty in this repository: the manuscript is not part of
+it, and the fragments are regenerated rather than tracked. Copy them into the
+manuscript's directory and compile it there:
 
 ```
 pdflatex paper_QREI_revised.tex     # three times: the table floats need a
@@ -49,16 +82,18 @@ is typed in by hand.
 |---|---|---|---|---|
 | `00_gie_pffc.R` | — | — | — | shared definitions only |
 | `12_table1_translation.R` | 1 | — | `values_translation.tex` | seconds |
-| `01_figures.R` | — | 1, 2, 3 | — | seconds |
+| `01_figures.R` | — | 1, 2, 3 | `values_figures.tex` | seconds |
 | `10_realdata1_ballbearings.R` | 9 | — | `values_realdata1.tex` | < 1 min |
 | `11_realdata2_guineapig.R` | 10 | — | `values_realdata2.tex` | < 1 min |
 | `04_sim_bias_mse.R` | 2, 3, 4 | — | `values_sim.tex` | 20–40 min |
 | `05_sim_ci.R` | 5, 11 (App. C) | — | — | ~1–3 h, parallel |
 | `06_sim_heavytail.R` | 6, 7 | — | `values_heavytail.tex` | ~1–2 h, parallel |
-| `07_sim_smallm.R` | 8 | — | `values_smallm.tex` | 30–60 min |
+| `07_sim_smallm.R` | 8 | — | `values_smallm.tex` | 30–60 min (needs 10) |
 | `08_figures_simulation.R` | — | 4, 5 | — | seconds (needs 04, 05) |
+| `09_values_text.R` | — | — | `values_text.tex` | seconds (reads `results/`) |
 
-The first four rows are the `quick` set; the rest are the simulations.
+`run_paper.R` runs every row except `04`, `05`, `06` and `07`;
+`run_simulations.R` runs exactly those four.
 
 ### Validation scripts
 
@@ -73,11 +108,49 @@ with an error if a check fails.
 | `validation/v3_check_moment_formula.R` | the closed-form moment of Eq. (3), against quadrature and `integrate()` |
 | `validation/v4_check_information.R` | the inequalities and bounds of Appendix B, including heavy-tailed cases with `alpha <= 2` |
 | `validation/v5_check_information_and_mle.R` | the closed-form Hessian of Section 3 against `numDeriv`, the explicit MLE of `alpha` given `lambda`, and the fixed-point iteration of Eq. (15) against direct maximisation |
+| `validation/v6_check_bootstrap.R` | that the undercoverage of the percentile interval in Table 5 is a property of that interval and not a fault in the code |
+| `validation/v7_check_pffc_generator.R` | that `generate_pffc()` reproduces the life test it stands for, against a direct simulation of the experiment |
+
+`v6` answers the one thing in Table 5 that looks like a bug. The percentile
+interval covers around 0.85–0.93 while the asymptotic interval sits at nominal,
+which is the reverse of the usual expectation. The script reproduces one cell of
+the design and decomposes the result: the Monte Carlo bias of the estimate, the
+bootstrap's own estimate of that bias, which side each interval misses on, where
+each interval is centred, and how often a bootstrap refit fails. It runs through
+`bootstrap_index()` and the three `ci_*()` functions themselves rather than
+re-implementing them. What comes out is that the estimator is biased at
+`m = 25`, that the bootstrap measures the bias accurately, and that the
+percentile interval — built from the quantiles of a distribution centred at
+`Chat + bias`, hence at roughly `C + 2 * bias` — carries the bias twice, while
+`NB` subtracts it and the ACI carries it once. The percentile interval is
+*longer* than the ACI and still covers less, so the deficit is a displacement
+and not a width. It takes about five minutes and runs as part of `run_paper.R`.
+
+`v7` checks the one function every simulated number depends on. `generate_pffc()`
+does not simulate the life test: it uses the equivalence noted by Wu and Kuş
+(2009, Sec. 2) — progressively first-failure-censored order statistics from `F`
+are distributed as a progressively type-II censored sample from
+`F_k(x) = 1 - (1 - F(x))^k`, which for the GIE is again GIE with the shape
+multiplied by `k` — and then generates the type-II sample by the
+exponential-spacings form of Balakrishnan and Sandhu (1995). Both steps are
+standard, but together they replace the experiment entirely, and a mistake in
+either would still produce an ordered sample of the right length. So `v7`
+simulates the experiment itself — `n` groups of `k` units, each failure's group
+withdrawn along with `R_i` further groups drawn at random — and compares the two
+coordinate by coordinate with a Kolmogorov–Smirnov test, over five designs
+covering all four censoring schemes, `alpha <= 2`, and the design of the first
+application. It also checks the closed-form marginal of the first failure, that
+the group counts reach exactly zero at the `m`-th failure, and that the four
+special cases Wu and Kuş list — complete sample, first-failure censoring,
+progressive type-II censoring, ordinary type-II censoring — all fall out of the
+general code. One to two minutes; also part of `run_paper.R`.
 
 ## Output
 
-- `results/` — raw numbers as `.csv` / `.rds`. These are the inputs to the
-  figures, so a figure can never drift out of step with the table it summarises.
+- `results/` — raw numbers as `.csv`. **Tracked in this repository**, because
+  the four Monte Carlo studies that produce them take hours and `run_paper.R`
+  reads them. They are also the inputs to the figures, so a figure can never
+  drift out of step with the table it summarises.
 - `../tables/tab_*.tex` — LaTeX table fragments, `\input` by the manuscript.
 - `../tables/values_*.tex` — `\newcommand` definitions for every number quoted in
   the running text: the true index values in Section 5.1, the coverage averages
@@ -94,6 +167,25 @@ Re-running any script overwrites its fragments; recompiling the manuscript
 (three times, for cross-references and float placement) then picks up the new
 numbers everywhere they appear.
 
+`results/` is shipped with this package. The three grid simulations take hours,
+and a reader who wants to check a table against the raw output, or to rebuild
+the figures and the text macros, should not have to run them first. Deleting the
+directory and running `Rscript run_all.R` rebuilds it from nothing.
+
+### Nothing in the manuscript is typed by hand
+
+That claim is meant literally, and it is now true of the running text as well as
+of the tables. Every number the prose quotes about a result comes from a macro
+that one of these scripts writes: the coverages averaged over the design and the
+counts of discarded replications from `09_values_text.R`, the peaks and crossing
+values of Figure 3 and the shape at which the median equals the scale from
+`01_figures.R`, the censored sample of Section 6.1 and the complete-data fit from
+`10_realdata1_ballbearings.R`. The only decimals left in the source are design
+constants the author chose — the quantile levels 0.25, 0.5 and 0.75, the nominal
+level 0.95, the tolerance 0.01 — and equation and section numbers inside
+citations. If a simulation is re-run and a number moves, every sentence that
+quotes it moves with it.
+
 ## Reproducibility notes
 
 - `MASTER_SEED` is defined in `00_gie_pffc.R` and every script derives its own
@@ -106,6 +198,19 @@ numbers everywhere they appear.
   serial one.
 - The bootstrap in both data analyses uses a fixed seed. Bootstrap interval
   endpoints therefore reproduce exactly.
+- The censored sample of the first application is **constructed by the script**,
+  not typed in. `10_realdata1_ballbearings.R` forms `n` groups of `k` units from
+  the 23 endurance times, applies the censoring plan, and writes the resulting
+  sample to `../tables/values_realdata1.tex` as `\bbSample`, which the manuscript
+  prints. This matters because the construction has to obey the scheme it
+  illustrates: with `k = 2` the design consumes `n * k` units, which cannot
+  exceed 23, and the first observation must be the smallest lifetime among all
+  units on test, since every observation is a group minimum. The sample used in
+  the original submission satisfied neither condition — it began at 41.52 when
+  the smallest observation is 17.88, and its plan `R = (3, 0^8)` called for 24
+  units. `07_sim_smallm.R` now reads the design back from that macro file
+  through `read_macros()` instead of repeating the constants, so the two cannot
+  drift apart.
 - `04`–`07` report the number of replications in which the fit converged and, for
   the asymptotic interval, the number in which the observed information was
   positive definite. These counts are the numerical check on nonsingularity
@@ -196,23 +301,3 @@ cancellation as `z -> 0` was severe enough to drop replications silently; and
 the maximum likelihood starting value is now obtained by profiling `alpha` out
 and maximising the one-dimensional profile likelihood on a grid, rather than
 being supplied by hand.
-
-## The marked-up manuscript
-
-`../paper_QREI_diff.tex` is the revised manuscript with everything new or
-changed printed in red, for the referee. It is produced by `../make_markup.py`:
-
-```
-cd ..
-python make_markup.py paper_QREI.tex      # the original submission
-pdflatex paper_QREI_diff.tex              # three times
-```
-
-`latexdiff` is the usual tool for this, but two things about this manuscript
-make a direct comparison useless without preprocessing: the revision refers to
-its numbers through macros (`\bbAlphaHat` and the rest) and pulls its tables in
-with `\input`, so a naive diff would compare macro names against numbers and
-report the whole of every table as changed. `make_markup.py` resolves both
-first, then marks at the block level, refining to word level inside ordinary
-paragraphs. Deleted material is not shown; only additions and changes are
-marked, which is what the marked-up copy is for.

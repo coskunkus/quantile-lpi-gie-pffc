@@ -1,0 +1,149 @@
+################################################################################
+##  07_sim_smallm.R
+##
+##  Small-sample study matched to the first application, Section 5.4.
+##  Produces Table 8 and writes it as a LaTeX fragment into ../tables/.
+##
+##  The design copies the ball bearing application exactly: k = 2, censoring
+##  plan R = (3, 0, ..., 0), and parameters fixed at the values estimated from
+##  that dataset.  m is varied over {9,12,15,20,25} so that the transition from
+##  the sample size actually used (m = 9) up to the smallest size in the main
+##  design (m = 25) can be seen.
+##
+##  Runtime: roughly 30-60 minutes on a single core; m is small here.
+################################################################################
+
+source("00_gie_pffc.R")
+need("numDeriv", "statmod", "progressr")
+
+set.seed(MASTER_SEED + 7L)
+
+N_REP_PT <- 4000
+N_REP_CI <- 2000
+B_BOOT   <- 250
+ALPHA    <- 3.4197      # MLE from the ball bearing PFFC sample, Section 6.1
+LAMBDA   <- 155.30      # MLE from the ball bearing PFFC sample, Section 6.1
+L_LIMIT  <- 20
+K        <- 2
+M_SET    <- c(9, 12, 15, 20, 25)
+LEVEL    <- 0.95
+N_TICK_PT <- 5
+N_TICK_CI <- 20
+TICK_PT   <- max(1L, N_REP_PT %/% N_TICK_PT)
+TICK_CI   <- max(1L, N_REP_CI %/% N_TICK_CI)
+N_TICK_PT <- N_REP_PT %/% TICK_PT   # counts actually delivered
+N_TICK_CI <- N_REP_CI %/% TICK_CI
+
+C_true <- CL_quantile(c(ALPHA, LAMBDA), L_LIMIT)
+cat(sprintf("True index at the application design: C_L^xi = %.4f  (L/lambda = %.4f)\n",
+            C_true, L_LIMIT / LAMBDA))
+
+res <- with_progress_bar(length(M_SET) * (N_TICK_PT + N_TICK_CI), function(p) {
+lapply(M_SET, function(m) {
+  R <- c(3, rep(0, m - 1))
+  true <- c(ALPHA, LAMBDA)
+
+  Ch <- rep(NA_real_, N_REP_PT)
+  for (i in seq_len(N_REP_PT)) {
+    tick_if(p, i, TICK_PT)
+    x  <- generate_pffc(m, K, R, ALPHA, LAMBDA)
+    ft <- fit_mle(x, R, K, start = true)
+    if (is.null(ft)) next
+    Ch[i] <- CL_quantile(ft$par, L_LIMIT)
+  }
+
+  cov <- len <- matrix(NA_real_, N_REP_CI, 3,
+                       dimnames = list(NULL, c("ACI", "PB", "NB")))
+  for (i in seq_len(N_REP_CI)) {
+    tick_if(p, i, TICK_CI)
+    x  <- generate_pffc(m, K, R, ALPHA, LAMBDA)
+    ft <- fit_mle(x, R, K, start = true)
+    if (is.null(ft)) next
+    Chat <- CL_quantile(ft$par, L_LIMIT)
+    if (!is.finite(Chat)) next
+
+    se <- delta_se(ft, L_LIMIT, "quantile")
+    if (is.finite(se)) {
+      ci <- ci_asymptotic(Chat, se, LEVEL)
+      cov[i, "ACI"] <- as.numeric(ci[1] < C_true && ci[2] > C_true)
+      len[i, "ACI"] <- diff(ci)
+    }
+    bt <- bootstrap_index(ft$par, m, K, R, L_LIMIT, B_BOOT, index = "quantile")
+    if (sum(is.finite(bt)) >= B_BOOT / 2) {
+      ci <- ci_percentile(bt, LEVEL)
+      cov[i, "PB"] <- as.numeric(ci[1] < C_true && ci[2] > C_true)
+      len[i, "PB"] <- diff(ci)
+      ci <- ci_normal_boot(Chat, bt, LEVEL)
+      cov[i, "NB"] <- as.numeric(ci[1] < C_true && ci[2] > C_true)
+      len[i, "NB"] <- diff(ci)
+    }
+  }
+
+  data.frame(
+    m = m, C_true = C_true,
+    Bias = mean(Ch, na.rm = TRUE) - C_true,
+    MSE  = mean((Ch - C_true)^2, na.rm = TRUE),
+    AL_ACI = mean(len[, "ACI"], na.rm = TRUE), CP_ACI = mean(cov[, "ACI"], na.rm = TRUE),
+    AL_PB  = mean(len[, "PB"],  na.rm = TRUE), CP_PB  = mean(cov[, "PB"],  na.rm = TRUE),
+    AL_NB  = mean(len[, "NB"],  na.rm = TRUE), CP_NB  = mean(cov[, "NB"],  na.rm = TRUE),
+    ## As in 05_sim_ci.R: replications that failed the positive-definiteness
+    ## check or the bootstrap-convergence check are excluded from the means, so
+    ## these counts are needed to read the coverages correctly.
+    n_pt = sum(is.finite(Ch)), n_ACI = sum(is.finite(cov[, "ACI"])),
+    n_boot = sum(is.finite(cov[, "PB"])), n_rep_ci = N_REP_CI)
+})
+})
+out <- do.call(rbind, res)
+
+for (i in seq_len(nrow(out)))
+  cat(sprintf("m=%2d | bias %+.4f mse %.4f | ACI %.4f/%.4f PB %.4f/%.4f NB %.4f/%.4f\n",
+              out$m[i], out$Bias[i], out$MSE[i], out$AL_ACI[i], out$CP_ACI[i],
+              out$AL_PB[i], out$CP_PB[i], out$AL_NB[i], out$CP_NB[i]))
+write.csv(out, file.path(RESULTS_DIR, "sim_smallm.csv"), row.names = FALSE)
+
+con <- base::file(file.path(TABLES_DIR, "tab_smallm.tex"), open = "wt")
+wl <- function(...) writeLines(paste0(...), con)
+wl("\\begin{table}[H]"); wl("\\centering")
+wl(sprintf(paste0("\\caption{Small-sample performance at the design of the first ",
+                  "application: $k=%d$, $\\mathbf{R}=(3,0^{m-1})$, $\\alpha=%.4f$, ",
+                  "$\\lambda=%.2f$, $L=%g$, so that $L/\\lambda=%.3f$ and ",
+                  "$C_L^{\\xi}=%.4f$. Bias and MSE from %d replications; AL and CP ",
+                  "from %d replications with $B=%d$.}"),
+           K, ALPHA, LAMBDA, L_LIMIT, L_LIMIT / LAMBDA, C_true,
+           N_REP_PT, N_REP_CI, B_BOOT))
+wl("\\label{T:smallm}"); wl("\\small")
+wl("\\begin{tabular}{l rr rr rr rr}"); wl("\\toprule")
+wl(" & \\multicolumn{2}{c}{Point estimator} & \\multicolumn{2}{c}{ACI} & ",
+   "\\multicolumn{2}{c}{PB} & \\multicolumn{2}{c}{NB} \\\\")
+wl("\\cmidrule(lr){2-3} \\cmidrule(lr){4-5} \\cmidrule(lr){6-7} \\cmidrule(lr){8-9}")
+wl("$m$ & \\multicolumn{1}{c}{Bias} & \\multicolumn{1}{c}{MSE}",
+   paste(rep(" & \\multicolumn{1}{c}{AL} & \\multicolumn{1}{c}{CP}", 3), collapse = ""), " \\\\")
+wl("\\midrule")
+for (i in seq_len(nrow(out)))
+  wl(sprintf("%d & %.4f & %.4f & %.4f & %.4f & %.4f & %.4f & %.4f & %.4f \\\\",
+             out$m[i], out$Bias[i], out$MSE[i],
+             out$AL_ACI[i], out$CP_ACI[i], out$AL_PB[i], out$CP_PB[i],
+             out$AL_NB[i], out$CP_NB[i]))
+wl("\\bottomrule"); wl("\\end{tabular}"); wl("\\end{table}")
+close(con)
+
+## Numbers quoted in the running text of Sections 5.4 and 6.1.
+r9 <- out[out$m == min(M_SET), ]
+write_macros(file.path(TABLES_DIR, "values_smallm.tex"), list(
+  smNrepPt   = as.character(N_REP_PT),
+  smNrepCi   = as.character(N_REP_CI),
+  smBootB    = as.character(B_BOOT),
+  smAlpha    = fmt(ALPHA, 4),
+  smLambda   = fmt(LAMBDA, 2),
+  smL        = as.character(L_LIMIT),
+  smRatio    = fmt(L_LIMIT / LAMBDA, 3),
+  smCtrue    = fmt(C_true, 4),
+  smMmin     = as.character(min(M_SET)),
+  smMmax     = as.character(max(M_SET)),
+  smMset     = paste(M_SET, collapse = ","),
+  smCPACI    = fmt(r9$CP_ACI, 3),
+  smCPPB     = fmt(r9$CP_PB, 3),
+  smCPNB     = fmt(r9$CP_NB, 3)
+), "07_sim_smallm.R")
+
+cat("\nWrote", file.path(TABLES_DIR, "tab_smallm.tex"), "\n")

@@ -89,7 +89,7 @@ tab <- cbind(tab, Length = tab[, 2] - tab[, 1])
 cat("\n95% confidence intervals for C_L^xi (Table 10)\n")
 print(round(tab, 4))
 
-cat(sprintf("\nOne-sided 95%% lower bound (Eq. 22): %.4f\n",
+cat(sprintf("\nOne-sided 95%% lower bound (Eq. (23)): %.4f\n",
             lower_bound_one_sided(Cq, se_q, LEVEL)))
 
 saveRDS(list(par = par_hat, se = c(se_alpha, se_lambda, se_q),

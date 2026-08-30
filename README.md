@@ -32,7 +32,7 @@ cd code
 Rscript run_paper.R
 ```
 
-About ten minutes. That runs the seven validation scripts, Table 1, Figures 1-5,
+About ten minutes. That runs the eight validation scripts, Table 1, Figures 1-5,
 both data analyses, and every number the running text quotes.
 
 ## The two entry points
@@ -99,7 +99,7 @@ scheme it illustrates and a hand-typed sample did not.
   whether run serially or in parallel.
 - `run_paper.R` and `run_simulations.R` both print `sessionInfo()` when they
   finish.
-- The seven validation scripts run as part of `run_paper.R` and stop with an
+- The eight validation scripts run as part of `run_paper.R` and stop with an
   error if any check fails. Between them they check the analytical derivatives,
   the location-scale invariance of both indexes, the closed-form moment against
   two independent numerical integrals, the finiteness bounds of Appendix B, the

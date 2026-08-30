@@ -13,7 +13,7 @@
 ##
 ##  What this does, in dependency order:
 ##
-##      the seven validation scripts   analytical results against independent
+##      the eight validation scripts   analytical results against independent
 ##                                     numerical calculations
 ##      12_table1_translation.R        Table 1
 ##      01_figures.R                   Figures 1-3 and the constants Sections
@@ -59,7 +59,8 @@ checks <- file.path("validation",
                       "v4_check_information.R",
                       "v5_check_information_and_mle.R",
                       "v6_check_bootstrap.R",
-                      "v7_check_pffc_generator.R"))
+                      "v7_check_pffc_generator.R",
+                      "v8_check_score_moments.R"))
 
 main <- c("12_table1_translation.R",
           "01_figures.R",

@@ -21,7 +21,25 @@ of the time remaining, which needs `progressr` (`progress` gives the nicer bar
 when running interactively). Every script installs anything missing on first
 use, and falls back gracefully if the bar cannot be drawn.
 
-R ≥ 4.1 is assumed. No other software is required.
+R >= 4.1 is assumed. No other software is required.
+
+The results reported in the paper were produced under:
+
+```
+R 4.5.2 (2025-10-31 ucrt), x86_64-w64-mingw32/x64, Windows 11
+numDeriv  2016.8-1.1
+statmod   1.5.1
+ggplot2   4.0.3
+tidyr     1.3.2
+patchwork 1.3.2
+progressr 0.18.0
+dplyr     1.2.1
+```
+
+Nothing here depends on those exact versions, and none of them is pinned.
+`run_paper.R`, `run_simulations.R` and `run_all.R` each end by printing
+`sessionInfo()`, so any run records its own versions in its own output and the
+block above can be checked against it.
 
 ## How to run
 
@@ -34,7 +52,7 @@ Rscript run_paper.R         # everything except the simulations   (~10 min)
 Rscript run_simulations.R   # the four Monte Carlo studies        (hours)
 ```
 
-`run_paper.R` runs the seven validation scripts, Tables 1-4, Figures 1-5, both
+`run_paper.R` runs the eight validation scripts, Tables 1-4, Figures 1-5, both
 applications, and every number the running text quotes. It does not re-run the
 Monte Carlo studies of Sections 5.1-5.4. It does not need to: the raw output of
 those studies ships with this package in `results/`, and three scripts read it
@@ -115,6 +133,7 @@ with an error if a check fails.
 | `validation/v5_check_information_and_mle.R` | the closed-form Hessian of Section 3 against `numDeriv`, the explicit MLE of `alpha` given `lambda`, and the fixed-point iteration of Eq. (15) against direct maximisation |
 | `validation/v6_check_bootstrap.R` | that the undercoverage of the percentile interval in Table 5 is a property of that interval and not a fault in the code |
 | `validation/v7_check_pffc_generator.R` | that `generate_pffc()` reproduces the life test it stands for, against a direct simulation of the experiment |
+| `validation/v8_check_score_moments.R` | the score-moment argument of Section 3: the identity `log(1 - e^{-lambda/x}) = -E/(alpha k)` on samples from `generate_pffc()`, the exponential spacings behind it, the two closed forms of the score against `loglik_score()`, and the finiteness of the fourth moments of both components at `alpha` = 0.5, 1 and 2, where the lifetime has no variance |
 
 `v6` answers the one thing in Table 5 that looks like a bug. The percentile
 interval covers around 0.85-0.93 while the asymptotic interval sits at nominal,
@@ -269,12 +288,24 @@ analytically,
 alpha_hat(lambda) = -m / (k * sum((R_i + 1) * log(1 - exp(-lambda/x_i))))
 ```
 
-maximising the resulting one-dimensional profile likelihood over a log-spaced
-grid in `lambda`, and using that as the starting value for
-`optim(..., method = "L-BFGS-B", hessian = TRUE)`. Standard errors come from the
-observed information returned by `optim`, combined with the analytical gradient
+and maximising the resulting one-dimensional profile likelihood over a
+log-spaced grid in `lambda`. That grid maximum is not the estimate; it is the
+starting value for the fixed-point iteration of Eq. (15), which is the primary
+route and the one that converges in the great majority of fits. When the
+iteration fails to converge, `optim(..., method = "L-BFGS-B", hessian = TRUE)`
+is used as a fallback from the same starting value. `fit_mle()` records which
+route was taken in its `route` element, and the scripts report how often the
+fixed-point route sufficed.
+
+Standard errors do not come from `optim`. They are computed from the analytic
+observed information of Eq. (17), `observed_information()`, on whichever
+parameter value the estimation returned, combined with the analytical gradient
 of the index through the delta method; the gradient of the moment-based index,
-which involves numerical quadrature, is obtained with `numDeriv::grad`.
+which involves numerical quadrature, is obtained with `numDeriv::grad`. The
+numerical Hessian from `optim` is retained only when `numeric_hessian = TRUE`,
+and only so that the two can be compared: the applications print the largest
+relative difference between them, and `validation/v5_check_information_and_mle.R`
+checks the analytic form against numerical differentiation directly.
 
 ## Changes relative to the scripts used for the original submission
 

@@ -34,15 +34,19 @@ Rscript run_paper.R         # everything except the simulations   (~10 min)
 Rscript run_simulations.R   # the four Monte Carlo studies        (hours)
 ```
 
-`run_paper.R` runs the seven validation scripts, Table 1, Figures 1–3, both
-applications, Figures 4–5, and every number the running text quotes. It does
-not re-run the Monte Carlo studies of Sections 5.1–5.4 and does not rewrite the
-tables they produce (Tables 2–8 and 11). It does not need to: the raw output of
-those studies ships with this package in `results/`, and the two scripts that
-summarise them — `08_figures_simulation.R` for Figures 4–5 and
-`09_values_text.R` for the coverage averages and replication counts the prose
-quotes — read those files. So `run_paper.R` on its own reproduces the
-manuscript, and any table can be checked against the raw output it came from.
+`run_paper.R` runs the seven validation scripts, Tables 1-4, Figures 1-5, both
+applications, and every number the running text quotes. It does not re-run the
+Monte Carlo studies of Sections 5.1-5.4. It does not need to: the raw output of
+those studies ships with this package in `results/`, and three scripts read it
+rather than recompute it. `08_figures_simulation.R` draws Figures 4-5 from it,
+`09_values_text.R` takes the coverage averages and replication counts the prose
+quotes from it, and `04_sim_bias_mse.R` runs in a reuse mode that reads
+`results/sim_bias_mse.csv` and goes straight to Tables 2-4, so those tables and
+their captions are rewritten on every run without the study behind them being
+repeated. Run `04_sim_bias_mse.R` on its own and it simulates, as before.
+Tables 5-8 and 11 are left as they are, since the scripts that write them have
+no reuse mode. So `run_paper.R` on its own reproduces the manuscript, and any
+table can be checked against the raw output it came from.
 
 `run_simulations.R` rebuilds `results/` from nothing. That is the only reason to
 run it. It takes several hours; `05_sim_ci.R` and `06_sim_heavytail.R` dominate
@@ -80,20 +84,21 @@ is typed in by hand.
 
 | File | Tables | Figures | Text macros | Runtime |
 |---|---|---|---|---|
-| `00_gie_pffc.R` | — | — | — | shared definitions only |
-| `12_table1_translation.R` | 1 | — | `values_translation.tex` | seconds |
-| `01_figures.R` | — | 1, 2, 3 | `values_figures.tex` | seconds |
-| `10_realdata1_ballbearings.R` | 9 | — | `values_realdata1.tex` | < 1 min |
-| `11_realdata2_guineapig.R` | 10 | — | `values_realdata2.tex` | < 1 min |
-| `04_sim_bias_mse.R` | 2, 3, 4 | — | `values_sim.tex` | 20–40 min |
-| `05_sim_ci.R` | 5, 11 (App. C) | — | — | ~1–3 h, parallel |
-| `06_sim_heavytail.R` | 6, 7 | — | `values_heavytail.tex` | ~1–2 h, parallel |
-| `07_sim_smallm.R` | 8 | — | `values_smallm.tex` | 30–60 min (needs 10) |
-| `08_figures_simulation.R` | — | 4, 5 | — | seconds (needs 04, 05) |
-| `09_values_text.R` | — | — | `values_text.tex` | seconds (reads `results/`) |
+| `00_gie_pffc.R` | - | - | - | shared definitions only |
+| `12_table1_translation.R` | 1 | - | `values_translation.tex` | seconds |
+| `01_figures.R` | - | 1, 2, 3 | `values_figures.tex` | seconds |
+| `10_realdata1_ballbearings.R` | 9 | - | `values_realdata1.tex` | < 1 min |
+| `11_realdata2_guineapig.R` | 10 | - | `values_realdata2.tex` | < 1 min |
+| `04_sim_bias_mse.R` | 2, 3, 4 | - | `values_sim.tex` | 20-40 min (seconds in reuse mode) |
+| `05_sim_ci.R` | 5, 11 (App. C) | - | - | ~1-3 h, parallel |
+| `06_sim_heavytail.R` | 6, 7 | - | `values_heavytail.tex` | ~1-2 h, parallel |
+| `07_sim_smallm.R` | 8 | - | `values_smallm.tex` | 30-60 min (needs 10) |
+| `08_figures_simulation.R` | - | 4, 5 | - | seconds (needs 04, 05) |
+| `09_values_text.R` | - | - | `values_text.tex` | seconds (reads `results/`) |
 
-`run_paper.R` runs every row except `04`, `05`, `06` and `07`;
-`run_simulations.R` runs exactly those four.
+`run_paper.R` runs every row except `05`, `06` and `07`, and runs `04` in its
+reuse mode, which reads `results/sim_bias_mse.csv` instead of simulating.
+`run_simulations.R` runs `04`, `05`, `06` and `07`, all four simulating.
 
 ### Validation scripts
 
@@ -104,7 +109,7 @@ with an error if a check fails.
 | File | Checks |
 |---|---|
 | `validation/v1_check_derivatives.R` | the analytical derivatives in the Remark of Section 3, against `numDeriv` |
-| `validation/v2_check_invariance.R` | location–scale invariance of both indexes |
+| `validation/v2_check_invariance.R` | location-scale invariance of both indexes |
 | `validation/v3_check_moment_formula.R` | the closed-form moment of Eq. (3), against quadrature and `integrate()` |
 | `validation/v4_check_information.R` | the inequalities and bounds of Appendix B, including heavy-tailed cases with `alpha <= 2` |
 | `validation/v5_check_information_and_mle.R` | the closed-form Hessian of Section 3 against `numDeriv`, the explicit MLE of `alpha` given `lambda`, and the fixed-point iteration of Eq. (15) against direct maximisation |
@@ -112,7 +117,7 @@ with an error if a check fails.
 | `validation/v7_check_pffc_generator.R` | that `generate_pffc()` reproduces the life test it stands for, against a direct simulation of the experiment |
 
 `v6` answers the one thing in Table 5 that looks like a bug. The percentile
-interval covers around 0.85–0.93 while the asymptotic interval sits at nominal,
+interval covers around 0.85-0.93 while the asymptotic interval sits at nominal,
 which is the reverse of the usual expectation. The script reproduces one cell of
 the design and decomposes the result: the Monte Carlo bias of the estimate, the
 bootstrap's own estimate of that bias, which side each interval misses on, where
@@ -120,46 +125,46 @@ each interval is centred, and how often a bootstrap refit fails. It runs through
 `bootstrap_index()` and the three `ci_*()` functions themselves rather than
 re-implementing them. What comes out is that the estimator is biased at
 `m = 25`, that the bootstrap measures the bias accurately, and that the
-percentile interval — built from the quantiles of a distribution centred at
-`Chat + bias`, hence at roughly `C + 2 * bias` — carries the bias twice, while
+percentile interval, built from the quantiles of a distribution centred at
+`Chat + bias` and hence at roughly `C + 2 * bias`, carries the bias twice, while
 `NB` subtracts it and the ACI carries it once. The percentile interval is
 *longer* than the ACI and still covers less, so the deficit is a displacement
 and not a width. It takes about five minutes and runs as part of `run_paper.R`.
 
 `v7` checks the one function every simulated number depends on. `generate_pffc()`
 does not simulate the life test: it uses the equivalence noted by Wu and Kuş
-(2009, Sec. 2) — progressively first-failure-censored order statistics from `F`
+(2009, Sec. 2), by which progressively first-failure-censored order statistics from `F`
 are distributed as a progressively type-II censored sample from
 `F_k(x) = 1 - (1 - F(x))^k`, which for the GIE is again GIE with the shape
-multiplied by `k` — and then generates the type-II sample by the
+multiplied by `k`, and then generates the type-II sample by the
 exponential-spacings form of Balakrishnan and Sandhu (1995). Both steps are
 standard, but together they replace the experiment entirely, and a mistake in
 either would still produce an ordered sample of the right length. So `v7`
-simulates the experiment itself — `n` groups of `k` units, each failure's group
-withdrawn along with `R_i` further groups drawn at random — and compares the two
-coordinate by coordinate with a Kolmogorov–Smirnov test, over five designs
+simulates the experiment itself, with `n` groups of `k` units and each failure's group
+withdrawn along with `R_i` further groups drawn at random, and compares the two
+coordinate by coordinate with a Kolmogorov-Smirnov test, over five designs
 covering all four censoring schemes, `alpha <= 2`, and the design of the first
 application. It also checks the closed-form marginal of the first failure, that
 the group counts reach exactly zero at the `m`-th failure, and that the four
-special cases Wu and Kuş list — complete sample, first-failure censoring,
-progressive type-II censoring, ordinary type-II censoring — all fall out of the
+special cases Wu and Kuş list, namely complete sample, first-failure censoring,
+progressive type-II censoring and ordinary type-II censoring, all fall out of the
 general code. One to two minutes; also part of `run_paper.R`.
 
 ## Output
 
-- `results/` — raw numbers as `.csv`. **Tracked in this repository**, because
+- `results/`: raw numbers as `.csv`. **Tracked in this repository**, because
   the four Monte Carlo studies that produce them take hours and `run_paper.R`
   reads them. They are also the inputs to the figures, so a figure can never
   drift out of step with the table it summarises.
-- `../tables/tab_*.tex` — LaTeX table fragments, `\input` by the manuscript.
-- `../tables/values_*.tex` — `\newcommand` definitions for every number quoted in
+- `../tables/tab_*.tex`: LaTeX table fragments, `\input` by the manuscript.
+- `../tables/values_*.tex`: `\newcommand` definitions for every number quoted in
   the running text: the true index values in Section 5.1, the coverage averages
   in Section 5.3, the small-sample coverages in Section 5.4, and all of the
   estimates, standard errors, translation constants and *p*-values in Sections
-  6.1–6.3. The manuscript `\input`s these six files in its preamble and refers
+  6.1-6.3. The manuscript `\input`s these six files in its preamble and refers
   to the numbers by name (`\bbAlphaHat`, `\htCPACIa`, and so on), so the prose
   updates together with the tables and cannot fall out of step with them.
-- `../figures/` — figures in both EPS and PDF. The manuscript refers to them
+- `../figures/`: figures in both EPS and PDF. The manuscript refers to them
   without an extension, so `pdflatex` picks the PDF and a `latex`/`dvips` route
   picks the EPS.
 
@@ -181,8 +186,8 @@ counts of discarded replications from `09_values_text.R`, the peaks and crossing
 values of Figure 3 and the shape at which the median equals the scale from
 `01_figures.R`, the censored sample of Section 6.1 and the complete-data fit from
 `10_realdata1_ballbearings.R`. The only decimals left in the source are design
-constants the author chose — the quantile levels 0.25, 0.5 and 0.75, the nominal
-level 0.95, the tolerance 0.01 — and equation and section numbers inside
+constants the author chose, namely the quantile levels 0.25, 0.5 and 0.75, the nominal
+level 0.95 and the tolerance 0.01, and equation and section numbers inside
 citations. If a simulation is re-run and a number moves, every sentence that
 quotes it moves with it.
 
@@ -206,12 +211,12 @@ quotes it moves with it.
   illustrates: with `k = 2` the design consumes `n * k` units, which cannot
   exceed 23, and the first observation must be the smallest lifetime among all
   units on test, since every observation is a group minimum. The sample used in
-  the original submission satisfied neither condition — it began at 41.52 when
+  the original submission satisfied neither condition: it began at 41.52 when
   the smallest observation is 17.88, and its plan `R = (3, 0^8)` called for 24
   units. `07_sim_smallm.R` now reads the design back from that macro file
   through `read_macros()` instead of repeating the constants, so the two cannot
   drift apart.
-- `04`–`07` report the number of replications in which the fit converged and, for
+- `04` to `07` report the number of replications in which the fit converged and, for
   the asymptotic interval, the number in which the observed information was
   positive definite. These counts are the numerical check on nonsingularity
   referred to in Section 3 and Appendix B.
@@ -231,8 +236,8 @@ that matter most are:
   dispatches exactly as Section 2.1 describes: the closed form when `alpha` is a
   positive integer with `r < alpha`, the quadrature of Eq. (4) otherwise. The
   true index values that define the simulation targets therefore go through the
-  closed form, while every estimate — `alpha` estimates are never exactly
-  integer — goes through the quadrature. The closed form is capped at
+  closed form, while every estimate goes through the quadrature, since `alpha`
+  estimates are never exactly integer. The closed form is capped at
   `alpha <= 20`: see `ALPHA_EXACT_MAX` for why.
 - **Eq. (15), the fixed-point iteration for the MLE of lambda**, together with
   the explicit expression for `alpha_hat` given `lambda`. This is the *primary*
@@ -247,8 +252,8 @@ that matter most are:
   figures.
 - **The derivatives in the Remark of Section 3.** `grad_CL_quantile()` is the
   analytical gradient used by the delta method for the quantile-based index.
-  Numerical differentiation is used for one thing only — the gradient of the
-  moment-based index, whose value depends on quadrature — which is exactly the
+  Numerical differentiation is used for one thing only, the gradient of the
+  moment-based index, whose value depends on quadrature, which is exactly the
   fallback the Remark itself describes.
 
 The `loglik_score()` function is the same idea one step earlier: the estimating
@@ -278,10 +283,10 @@ substantive corrections were made along the way; they are listed here so that
 any change in a reported number can be traced.
 
 1. **Quadrature.** The moment integral was previously evaluated by mapping
-   `x = t/(1-t)` and applying Gauss–Legendre. That map does not carry `lambda`,
+   `x = t/(1-t)` and applying Gauss-Legendre. That map does not carry `lambda`,
    so accuracy degraded as `lambda` grew, and it leaves an endpoint singularity
    of order `alpha-1-r`, so the rule converged only algebraically when `alpha`
-   was close to `r` — the error at `alpha = 2.1`, `r = 2` was about 40%. The
+   was close to `r`: the error at `alpha = 2.1`, `r = 2` was about 40%. The
    substitutions documented in `gie_moment_gl()` remove both problems. This
    affects the left edge of Figure 3, the `alpha = 2.5` row of Table 1, and
    `C_L^M` in Section 6.1 in its fourth decimal.

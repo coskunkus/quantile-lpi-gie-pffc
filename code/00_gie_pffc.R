@@ -243,7 +243,7 @@ translation_constants <- function(alpha, n_nodes = 800) {
 }
 
 ## ---------------------------------------------------------------------------
-## 4.  Derivatives (the Remark in Section 3, and Eq. (16))
+## 4.  Derivatives (the Remark in Section 3, and Eq. (18))
 ## ---------------------------------------------------------------------------
 
 #' d xi(p) / d lambda = h_p(alpha).
@@ -344,7 +344,7 @@ make_scheme <- function(m, type, val = m) {
 #' of F_k(x) = 1 - (1 - F(x))^k, which by Wu & Kus (2009) is the correct marginal
 #' for a first-failure-censored observation.  Since
 #' F_k(x) = 1 - (1 - e^(-lam/x))^(alpha k), its quantile function is the GIE
-#' quantile function of Eq. (6) with alpha replaced by alpha*k.
+#' quantile function of Eq. (7) with alpha replaced by alpha*k.
 generate_pffc <- function(m, k, R, alpha, lambda) {
   n     <- sum(R) + m
   cumR  <- c(0, cumsum(R)[-m])
@@ -537,7 +537,7 @@ is_posdef <- function(M) {
 #' Delta-method standard error of an index, Eq. (18).
 #'
 #' `fit` is the object returned by fit_mle(); its `information` component is the
-#' analytic observed information of Eq. (16).  The gradient of the quantile-based
+#' analytic observed information of Eq. (17).  The gradient of the quantile-based
 #' index is the analytical one from the Remark in Section 3; for the
 #' moment-based index, whose value depends on numerical quadrature, the gradient
 #' is obtained with numDeriv::grad, exactly as that Remark says.

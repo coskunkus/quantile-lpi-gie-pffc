@@ -38,7 +38,7 @@ cat("Guinea pig data:  m =", m, " k =", k, " n =", m + sum(R), " L =", L, "\n\n"
 fit <- fit_mle(x, R, k, numeric_hessian = TRUE)
 stopifnot(!is.null(fit))
 par_hat <- fit$par
-I_obs   <- fit$information          # analytic, Eq. (16)
+I_obs   <- fit$information          # analytic, Eq. (17)
 
 cat(sprintf("Estimation route: %s", fit$route))
 if (identical(fit$route, "fixedpoint"))
@@ -137,5 +137,10 @@ write_macros(file.path(TABLES_DIR, "values_realdata2.tex"), list(
   gpCX        = fmt(Cq, 4),
   gpCXSE      = fmt(se_q, 4),
   gpRatio     = fmt(L / par_hat[2], 3),
-  gpBootB     = as.character(B_BOOT)
+  gpBootB     = as.character(B_BOOT),
+  ## the three interval lengths, so that Section 6.2 can quote how far apart
+  ## they are without the figure being typed into the manuscript
+  gpALACI     = fmt(tab["ACI", "Length"], 4),
+  gpALPB      = fmt(tab["PB",  "Length"], 4),
+  gpALNB      = fmt(tab["NB",  "Length"], 4)
 ), "11_realdata2_guineapig.R")

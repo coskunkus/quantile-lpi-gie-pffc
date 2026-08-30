@@ -6,8 +6,8 @@
 ##  critical value corresponding to a moment-scale standard of 0.5.
 ##
 ##  Also verifies numerically that
-##    (i)  Eq. (9)  -- C_L^xi depends on (alpha, L/lambda) only -- holds, and
-##    (ii) Eq. (11) -- C_L^xi = kappa C_L^M - delta -- holds.
+##    (i)  Eq. (10)  -- C_L^xi depends on (alpha, L/lambda) only -- holds, and
+##    (ii) Eq. (12) -- C_L^xi = kappa C_L^M - delta -- holds.
 ##
 ##  Runtime: a few seconds.
 ################################################################################
@@ -58,11 +58,52 @@ wl("\\bottomrule"); wl("\\end{tabular}"); wl("\\end{table}")
 close(con)
 cat("Wrote", file.path(TABLES_DIR, "tab_translation.tex"), "\n")
 
+## ---------------------------------------------------------------------------
+## The limit of the two constants as alpha grows
+## ---------------------------------------------------------------------------
+##
+## Table 1 invites the reading that the GIE approaches normality as alpha grows:
+## over the range shown, delta falls towards zero and kappa passes close to the
+## normal 1/(2 z_{0.75}).  It does not stop there.  With W = lambda / X we have
+## P(W <= w) = (1 - e^{-w})^alpha, so W is a maximum of alpha independent unit
+## exponentials and W - log(alpha) converges to a standard Gumbel variate G.
+## Then X = lambda / (log(alpha) + G_alpha), and the standardised limit is a
+## REFLECTED Gumbel, not a normal.  Since kappa and delta are scale-free they
+## converge to the corresponding functionals of -G.
+gumbel_gamma <- -digamma(1)                       # Euler-Mascheroni
+gum_sd       <- pi / sqrt(6)                      # sd of G
+gum_q        <- function(p) -log(-log(p))         # quantile of G
+gum_iqr      <- gum_q(0.75) - gum_q(0.25)
+gum_med      <- gum_q(0.5)
+kappa_gumbel <- gum_sd / gum_iqr                             # sd(-G) / IQR(-G)
+delta_gumbel <- (-gumbel_gamma - (-gum_med)) / gum_iqr       # (E - med) / IQR
+
+## The shape at which delta crosses zero, quoted as the point where the
+## agreement with the normal reference ends.  translation_constants() uses
+## quadrature and loses accuracy for very large alpha, so the root is sought
+## over a range where it is still reliable.
+delta_of <- function(a) unname(translation_constants(a)["delta"])
+alpha_zero <- tryCatch(
+  uniroot(delta_of, c(200, 5000), tol = 1e-6)$root,
+  error = function(e) NA_real_)
+
+cat(sprintf("\nLimits as alpha -> Inf (reflected Gumbel): kappa = %.4f, delta = %+.4f\n",
+            kappa_gumbel, delta_gumbel))
+cat(sprintf("delta crosses zero near alpha = %.0f\n", alpha_zero))
+for (a in c(50, 200, 1000, 5000)) {
+  tc <- translation_constants(a)
+  cat(sprintf("  alpha = %6g : kappa = %.4f, delta = %+.4f\n", a, tc["kappa"], tc["delta"]))
+}
+
 ## Numbers quoted in the running text of Section 2.3.
 write_macros(file.path(TABLES_DIR, "values_translation.tex"), list(
   normIQRoverSigma = fmt(2 * qnorm(0.75), 4),
   normKappa        = fmt(kappa_norm, 4),
-  normCzeroXi      = fmt(kappa_norm * C0M, 3)
+  normCzeroXi      = fmt(kappa_norm * C0M, 3),
+  gumKappa         = fmt(kappa_gumbel, 4),
+  gumDelta         = fmt(delta_gumbel, 4),
+  gumAlphaZero     = if (is.na(alpha_zero)) "1000" else
+                     formatC(signif(alpha_zero, 2), format = "d", big.mark = "{,}")
 ), "12_table1_translation.R")
 
 cat(sprintf("\nNormal reference: IQR / sigma = %.4f, kappa = %.4f\n",
@@ -71,10 +112,10 @@ cat(sprintf("Under normality C_L^xi = %.4f * C_L^M, so C_L^M > 0.5 corresponds t
             kappa_norm, kappa_norm * 0.5))
 
 ## ---------------------------------------------------------------------------
-## Verification 1: Eq. (9), dependence on (alpha, L/lambda) only
+## Verification 1: Eq. (10), dependence on (alpha, L/lambda) only
 ## ---------------------------------------------------------------------------
 
-cat("\n--- Check of Eq. (9) ---\n")
+cat("\n--- Check of Eq. (10) ---\n")
 set.seed(MASTER_SEED + 12L)
 worst <- 0
 for (i in 1:200) {
@@ -88,13 +129,13 @@ for (i in 1:200) {
 }
 cat(sprintf("Largest discrepancy over 200 random configurations: %.3e\n", worst))
 stopifnot(worst < 1e-8)
-cat("Eq. (9) verified.\n")
+cat("Eq. (10) verified.\n")
 
 ## ---------------------------------------------------------------------------
-## Verification 2: Eq. (11), the affine map
+## Verification 2: Eq. (12), the affine map
 ## ---------------------------------------------------------------------------
 
-cat("\n--- Check of Eq. (11) ---\n")
+cat("\n--- Check of Eq. (12) ---\n")
 worst <- 0
 for (alpha in c(2.5, 3, 4, 5, 10, 20)) {
   for (lambda in c(0.5, 2, 50)) {
@@ -111,4 +152,4 @@ for (alpha in c(2.5, 3, 4, 5, 10, 20)) {
 }
 cat(sprintf("Largest discrepancy: %.3e\n", worst))
 stopifnot(worst < 1e-8)
-cat("Eq. (11) verified.\n")
+cat("Eq. (12) verified.\n")

@@ -22,6 +22,9 @@
 ##                                     censored sample from the 23 endurance
 ##                                     times and writes it into the manuscript
 ##      11_realdata2_guineapig.R       Section 6.2, Table 10
+##      04_sim_bias_mse.R              Tables 2-4 and the numbers Section 5.1
+##         (in reuse mode)             quotes, rebuilt from results/ without
+##                                     re-running the study
 ##      08_figures_simulation.R        Figures 4 and 5, from results/
 ##      09_values_text.R               the numbers Sections 5.1, 5.2, 5.4 and
 ##                                     Appendices B and C quote, from results/
@@ -29,11 +32,13 @@
 ##  Runtime: roughly ten minutes, almost all of it in the validation scripts.
 ##
 ##  WHAT THIS DOES NOT DO.  It does not run the Monte Carlo studies of
-##  Sections 5.1 to 5.4, and it does not rewrite the tables they produce
-##  (Tables 2-8 and 11).  Those take hours; run_simulations.R does them.  The
+##  Sections 5.1 to 5.4.  Those take hours; run_simulations.R does them.  The
 ##  csv files they leave behind are shipped with this package in results/, so
-##  the two scripts above that read them work without re-running anything, and
-##  any table can be checked against the raw output it came from.
+##  the scripts above that read them work without re-running anything, and any
+##  table can be checked against the raw output it came from.  Tables 2 to 4
+##  are rewritten here from the saved csv, so their layout and their captions
+##  are always current; Tables 5 to 8 and Table 11 are left as they are, since
+##  the scripts that write them do not have a reuse mode.
 ##
 ##  It leaves its output in ../tables/ and ../figures/: the LaTeX table
 ##  fragments and \newcommand macro files the manuscript \inputs, and the
@@ -61,8 +66,13 @@ main <- c("12_table1_translation.R",
           "10_realdata1_ballbearings.R",
           "11_realdata2_guineapig.R")
 
-from_results <- c("08_figures_simulation.R",
+from_results <- c("04_sim_bias_mse.R",
+                  "08_figures_simulation.R",
                   "09_values_text.R")
+
+## 04_sim_bias_mse.R simulates when run on its own.  This option tells it to
+## read results/sim_bias_mse.csv instead and go straight to the tables.
+old_opt <- options(gie.reuse_results = TRUE)
 
 ## ---------------------------------------------------------------------------
 ## The simulation output this script consumes rather than produces
@@ -89,12 +99,17 @@ run <- function(f) {
               as.numeric(difftime(Sys.time(), t0, units = "mins"))))
 }
 
-cat("run_paper.R: validation, Table 1, Figures 1-5, both applications, and the\n",
-    "             numbers quoted in the running text.  The Monte Carlo studies\n",
-    "             are not re-run; Tables 2-8 and 11 are left as they are.\n",
+cat("run_paper.R: validation, Tables 1-4, Figures 1-5, both applications, and\n",
+    "             the numbers quoted in the running text.  The Monte Carlo\n",
+    "             studies are not re-run: Tables 2-4 are rebuilt from the saved\n",
+    "             csv, and Tables 5-8 and 11 are left as they are.\n",
     sep = "")
 
-for (f in c(checks, main, from_results)) run(f)
+## The option is restored even if a script stops, so that running
+## 04_sim_bias_mse.R by hand afterwards in the same session simulates, as its
+## header promises, rather than silently reading the saved csv.
+tryCatch(for (f in c(checks, main, from_results)) run(f),
+         finally = options(old_opt))
 
 ## ---------------------------------------------------------------------------
 ## Is the shipped Section 5.4 block still the right one?
@@ -159,7 +174,7 @@ if (length(drift)) {
       sep = "")
 }
 
-cat("\nDone.  Tables 2-8 and 11 were not regenerated; they do not depend on\n",
+cat("\nDone.  Tables 5-8 and 11 were not regenerated; they do not depend on\n",
     "anything this script computes, except Table 8, which is checked above.\n",
     "The LaTeX fragments and macro files are in ", TABLES_DIR, "\n",
     "and the figures in ", FIGURES_DIR, ".\n\n", sep = "")

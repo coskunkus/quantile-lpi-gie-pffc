@@ -92,9 +92,17 @@ designs <- list(
   list(m = 25,  k = 2, alpha = 5,   lambda = 2,      sch = "Early"),
   list(m = 25,  k = 5, alpha = 1,   lambda = 2,      sch = "Late"),
   list(m = 100, k = 2, alpha = 2,   lambda = 2,      sch = "Equal"),
-  list(m = 9,   k = 2, alpha = 3.42, lambda = 155.3, sch = "Early"))
+  local({
+    ## the design of the first application, read from the macro file that
+    ## 10_realdata1_ballbearings.R writes rather than copied here
+    a <- read_macros(file.path(TABLES_DIR, "values_realdata1.tex"))
+    list(m = as.numeric(a$bbM), k = as.numeric(a$bbK),
+         alpha = as.numeric(a$bbAlphaHat), lambda = as.numeric(a$bbLambdaHat),
+         sch = "app", R1 = as.numeric(a$bbRfirst))
+  }))
 for (d in designs) {
-  R <- if (d$m == 9) c(3, rep(0, d$m - 1)) else make_scheme(d$m, d$sch)
+  R <- if (identical(d$sch, "app")) c(d$R1, rep(0, d$m - 1))
+         else make_scheme(d$m, d$sch)
   mn <- Inf
   for (i in 1:200) {
     x  <- generate_pffc(d$m, d$k, R, d$alpha, d$lambda)

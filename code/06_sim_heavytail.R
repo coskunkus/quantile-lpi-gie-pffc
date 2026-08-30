@@ -7,7 +7,7 @@
 ##
 ##  Design:  alpha in {1,2} -- the moment-based index does not exist here --
 ##           lambda = 2 and L = 0.2, so that L/lambda = 0.1, close to the ratio
-##           of about 0.13 seen in both applications.  Everything else matches
+##           of 0.154 and 0.125 seen in the applications.  Everything else matches
 ##           the baseline design of Section 5.1.
 ##
 ##  Runtime: the interval part is the expensive one, roughly 2-5 hours on a

@@ -9,6 +9,12 @@ figures/*
 # code/results/ IS tracked: it is the raw output of the four Monte Carlo
 # studies, which take hours, and run_paper.R reads it.  See README.md.
 
+# Stray output from interactive R sessions or LaTeX runs inside this folder.
+# This repository holds code only: it tracks no figure and no document, so any
+# pdf or eps here is a leftover, not something to publish.
+*.pdf
+*.eps
+
 # R and LaTeX leftovers
 .Rhistory
 .RData

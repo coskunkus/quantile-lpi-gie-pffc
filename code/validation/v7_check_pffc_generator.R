@@ -84,19 +84,25 @@ pffc_by_experiment <- function(m, k, R, alpha, lambda) {
 ## Designs: the four schemes of Section 5.1, a heavy-tailed case, and the
 ## design of the first application.
 ## ---------------------------------------------------------------------------
+## The last entry is the design of the first application, read from the macro
+## file that 10_realdata1_ballbearings.R writes.  Its censoring plan is not one
+## of the four named schemes, so it carries its own R.
+app <- read_macros(file.path(TABLES_DIR, "values_realdata1.tex"))
 designs <- list(
-  list(m = 25, k = 2, sch = "Early",  alpha = 5,      lambda = 2),
-  list(m = 25, k = 5, sch = "Late",   alpha = 5,      lambda = 2),
-  list(m = 12, k = 3, sch = "Middle", alpha = 2,      lambda = 2),
-  list(m = 12, k = 2, sch = "Equal",  alpha = 1,      lambda = 2),
-  list(m =  9, k = 2, sch = "Early",  alpha = 3.4197, lambda = 155.30)
+  list(m = 25, k = 2, sch = "Early",  alpha = 5, lambda = 2),
+  list(m = 25, k = 5, sch = "Late",   alpha = 5, lambda = 2),
+  list(m = 12, k = 3, sch = "Middle", alpha = 2, lambda = 2),
+  list(m = 12, k = 2, sch = "Equal",  alpha = 1, lambda = 2),
+  list(m = as.numeric(app$bbM), k = as.numeric(app$bbK), sch = "app",
+       alpha = as.numeric(app$bbAlphaHat), lambda = as.numeric(app$bbLambdaHat),
+       R = c(as.numeric(app$bbRfirst), rep(0, as.numeric(app$bbM) - 1)))
 )
 
 fails <- character(0)
 chk <- function(cond, msg) if (!isTRUE(cond)) fails <<- c(fails, msg)
 
 for (d in designs) {
-  R <- make_scheme(d$m, d$sch)
+  R <- if (is.null(d$R)) make_scheme(d$m, d$sch) else d$R
   n <- sum(R) + d$m
 
   ## ------------------------------------------------------------------ (a)

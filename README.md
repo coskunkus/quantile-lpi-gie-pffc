@@ -1,4 +1,4 @@
-# A General Quantile-Based Lifetime Performance Index — reproduction code
+# A General Quantile-Based Lifetime Performance Index: reproduction code
 
 `R` code reproducing every table, figure and reported number in
 
@@ -32,7 +32,7 @@ cd code
 Rscript run_paper.R
 ```
 
-About ten minutes. That runs the seven validation scripts, Table 1, Figures 1–5,
+About ten minutes. That runs the seven validation scripts, Table 1, Figures 1-5,
 both data analyses, and every number the running text quotes.
 
 ## The two entry points
@@ -43,11 +43,11 @@ Rscript run_simulations.R   # the four Monte Carlo studies        (hours)
 Rscript run_all.R           # both, in the right order            (hours)
 ```
 
-The Monte Carlo studies of Sections 5.1–5.4 take several hours. Their raw output
+The Monte Carlo studies of Sections 5.1-5.4 take several hours. Their raw output
 is tracked here, in `code/results/`, so you do not have to run them: `run_paper.R`
-reads those csv files to build Figures 4–5 and the coverage averages and
-replication counts the prose quotes, and rebuilds every table and macro file the
-manuscript needs except Tables 2–8 and 11. Delete `code/results/` and run
+reads those csv files to build Figures 4-5, the coverage averages and
+replication counts the prose quotes, and Tables 2-4, and rebuilds every table and
+macro file the manuscript needs except Tables 5-8 and 11. Delete `code/results/` and run
 `run_simulations.R` if you want the simulations rebuilt from nothing; everything
 is seeded, so the same numbers should come back.
 
@@ -82,8 +82,8 @@ figures/                \newcommand macro files, and the figures
 
 ## Nothing in the manuscript is typed by hand
 
-The claim is meant literally. Every number the paper reports — in a table, in a
-caption, or in the running prose — comes from a `\newcommand` that one of these
+The claim is meant literally. Every number the paper reports, whether in a table, in a
+caption or in the running prose, comes from a `\newcommand` that one of these
 scripts writes into `tables/values_*.tex`. The manuscript refers to them by name
 (`\bbAlphaHat`, `\ctCPACIa`, `\figPeakM`, …), so a sentence three sections away
 from a table cannot describe an older version of it. The censored sample of
@@ -101,11 +101,11 @@ scheme it illustrates and a hand-typed sample did not.
   finish.
 - The seven validation scripts run as part of `run_paper.R` and stop with an
   error if any check fails. Between them they check the analytical derivatives,
-  the location–scale invariance of both indexes, the closed-form moment against
+  the location-scale invariance of both indexes, the closed-form moment against
   two independent numerical integrals, the finiteness bounds of Appendix B, the
   closed-form Hessian and the fixed-point iteration, the decomposition of the
-  bootstrap coverage, and — against a direct simulation of the life test itself
-  — the PFFC sample generator on which every simulated number depends.
+  bootstrap coverage, and, against a direct simulation of the life test itself,
+  the PFFC sample generator on which every simulated number depends.
 
 ## License
 

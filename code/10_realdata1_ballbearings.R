@@ -5,7 +5,7 @@
 ##  data (Lieblein & Zelen 1956; Lawless 2011).
 ##
 ##  Reproduces Table 9 and every number quoted in Sections 6.1 and 6.3,
-##  including the one-sided decision rule of Eq. (22).
+##  including the one-sided decision rule of Eq. (23).
 ##
 ##  The bootstrap seed is fixed.  The earlier version of this script called
 ##  set.seed(NULL), which made the bootstrap intervals irreproducible.
@@ -91,7 +91,7 @@ cat("Ball bearing data:  m =", m, " k =", k, " n =", m + sum(R), " L =", L, "\n\
 fit <- fit_mle(x, R, k, numeric_hessian = TRUE)
 stopifnot(!is.null(fit))
 par_hat <- fit$par
-I_obs   <- fit$information          # analytic, Eq. (16)
+I_obs   <- fit$information          # analytic, Eq. (17)
 
 cat(sprintf("Estimation route: %s", fit$route))
 if (identical(fit$route, "fixedpoint"))
@@ -174,7 +174,7 @@ print(round(tab[, c("M_Lower", "M_Upper", "M_Length",
                     "Q_Lower", "Q_Upper", "Q_Length")], 4))
 
 ## ---------------------------------------------------------------------------
-## Section 6.3: the one-sided decision rule, Eq. (22)
+## Section 6.3: the one-sided decision rule, Eq. (23)
 ## ---------------------------------------------------------------------------
 
 cat("\n--- Decision rule of Section 6.3 (quantile-based index only) ---\n")
@@ -182,17 +182,51 @@ lb <- lower_bound_one_sided(Cq, se_q, LEVEL)
 cat(sprintf("One-sided 95%% lower bound: %.4f - %.4f * %.4f = %.4f\n",
             Cq, qnorm(LEVEL), se_q, lb))
 
-for (C0M in c(0.5)) {
-  C0xi <- kd["kappa"] * C0M - kd["delta"]
-  cat(sprintf("\nPolicy stated on the moment scale as C_0^M = %.2f\n", C0M))
-  cat(sprintf("  translated threshold C_0^xi = %.4f\n", C0xi))
-  cat(sprintf("  reject H0 (process capable)? %s   (z = %.4f, p = %.4f)\n",
-              lb > C0xi, (Cq - C0xi) / se_q, 1 - pnorm((Cq - C0xi) / se_q)))
+## When the standard is stated on the moment scale and translated, the
+## threshold is not a known constant: kappa and delta are functions of alpha and
+## are evaluated at alpha-hat.  Testing C_L^xi against it with se(C_L^xi) alone
+## would ignore that.  The correct object is the single scalar
+##
+##     G(alpha, lambda) = C_L^xi(alpha, lambda) - {kappa(alpha) C_0^M - delta(alpha)}
+##
+## and the decision is whether G > 0.  Both kappa and delta depend on alpha only
+## -- they are ratios of quantities all proportional to lambda -- so the
+## translation contributes to the alpha-derivative and not to the lambda one.
+## Its gradient goes through the same delta method and the same observed
+## information as everything else in the paper.
+KD_NODES <- 400        # the same rule kd above uses, so the two agree exactly
+G_fun <- function(par, C0M) {
+  tc <- translation_constants(par[1], n_nodes = KD_NODES)
+  CL_quantile(par, L) - (tc["kappa"] * C0M - tc["delta"])
 }
-for (C0xi in c(0.5)) {
-  cat(sprintf("\nPolicy stated directly on the quantile scale as C_0^xi = %.2f\n", C0xi))
+
+for (C0M in c(0.5)) {
+  C0xi  <- unname(kd["kappa"] * C0M - kd["delta"])
+  gr    <- numDeriv::grad(function(pp) G_fun(pp, C0M), par_hat)
+  V     <- solve(I_obs)
+  se_G  <- sqrt(as.numeric(t(gr) %*% V %*% gr))
+  Ghat  <- unname(G_fun(par_hat, C0M))
+  z_G   <- Ghat / se_G
+  lb_G  <- Ghat - qnorm(LEVEL) * se_G
+  ## the same test carried out as if the threshold were known, for comparison
+  z_naive <- (Cq - C0xi) / se_q
+
+  cat(sprintf("\nPolicy stated on the moment scale as C_0^M = %.2f\n", C0M))
+  cat(sprintf("  translated threshold C_0^xi = %.4f (a function of alpha-hat)\n", C0xi))
+  cat(sprintf("  G = C_L^xi - C_0^xi = %.4f, se(G) = %.4f  [se(C_L^xi) alone = %.4f]\n",
+              Ghat, se_G, se_q))
+  cat(sprintf("  one-sided 95%% lower bound for G: %.4f\n", lb_G))
   cat(sprintf("  reject H0 (process capable)? %s   (z = %.4f, p = %.4f)\n",
-              lb > C0xi, (Cq - C0xi) / se_q, 1 - pnorm((Cq - C0xi) / se_q)))
+              lb_G > 0, z_G, 1 - pnorm(z_G)))
+  cat(sprintf("  treating the threshold as known would give z = %.4f, p = %.4f\n",
+              z_naive, 1 - pnorm(z_naive)))
+}
+for (C0xi_direct in c(0.5)) {
+  cat(sprintf("\nPolicy stated directly on the quantile scale as C_0^xi = %.2f\n",
+              C0xi_direct))
+  cat(sprintf("  reject H0 (process capable)? %s   (z = %.4f, p = %.4f)\n",
+              lb > C0xi_direct, (Cq - C0xi_direct) / se_q,
+              1 - pnorm((Cq - C0xi_direct) / se_q)))
 }
 
 ## One-sided bootstrap analogues, quoted at the end of Section 6.3.
@@ -242,8 +276,18 @@ cat("Wrote", file.path(TABLES_DIR, "tab_realdata1.tex"), "\n")
 lbound  <- lower_bound_one_sided(Cq, se_q, LEVEL)
 CzeroM  <- 0.5
 CzeroXi <- unname(kd["kappa"] * CzeroM - kd["delta"])
-pTrans  <- 1 - pnorm((Cq - CzeroXi) / se_q)
-pDirect <- 1 - pnorm((Cq - CzeroM)  / se_q)
+## p-value for the translated standard, with the uncertainty of the translated
+## threshold carried through (see the G_fun block above).
+grT     <- numDeriv::grad(function(pp) G_fun(pp, CzeroM), par_hat)
+se_G    <- sqrt(as.numeric(t(grT) %*% solve(I_obs) %*% grT))
+Ghat    <- unname(G_fun(par_hat, CzeroM))
+pTrans  <- 1 - pnorm(Ghat / se_G)
+## A standard set directly on the quantile scale is a genuine constant, so here
+## se(C_L^xi) alone is the right denominator.  It happens to be numerically 0.5,
+## the same figure as the moment-scale policy, which is the point of the
+## comparison; it is a different quantity and is named separately.
+CzeroXiDirect <- 0.5
+pDirect <- 1 - pnorm((Cq - CzeroXiDirect) / se_q)
 
 write_macros(file.path(TABLES_DIR, "values_realdata1.tex"), list(
   bbM            = as.character(m),
@@ -270,12 +314,17 @@ write_macros(file.path(TABLES_DIR, "values_realdata1.tex"), list(
   bbDelta        = fmt(kd["delta"], 4),
   bbRatio        = fmt(L / par_hat[2], 3),
   bbCzeroM       = fmt(CzeroM, 1),
+  bbCzeroXiDir   = fmt(CzeroXiDirect, 1),
   bbCzeroXi      = fmt(CzeroXi, 4),
   bbZlevel       = fmt(qnorm(LEVEL), 4),
   bbLowerBound   = fmt(lbound, 3),
   bbPBlower      = fmt(lb_pb, 3),
   bbNBlower      = fmt(lb_nb, 3),
   bbPtranslated  = fmt(pTrans, 3),
+  bbSeG          = fmt(se_G, 4),
+  bbGhat         = fmt(Ghat, 4),
+  bbGlower       = fmt(Ghat - qnorm(LEVEL) * se_G, 3),
+  bbPtransNaive  = fmt(1 - pnorm((Cq - CzeroXi) / se_q), 3),
   bbPdirect      = fmt(pDirect, 3),
   bbBootB        = as.character(B_BOOT)
 ), "10_realdata1_ballbearings.R")

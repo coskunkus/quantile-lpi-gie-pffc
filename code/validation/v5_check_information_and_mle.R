@@ -27,8 +27,14 @@ set.seed(MASTER_SEED + 105L)
 
 cat("Checking the closed-form Hessian of Section 3 against numDeriv ...\n")
 
+app_fit <- read_macros(file.path(TABLES_DIR, "values_realdata1.tex"))
 designs <- list(
-  list(m = 9,   k = 2, alpha = 3.42, lambda = 155.3, sch = "Early"),
+  ## the design of the first application, read from the macro file that
+  ## 10_realdata1_ballbearings.R writes rather than copied here
+  list(m = as.numeric(app_fit$bbM), k = as.numeric(app_fit$bbK),
+       alpha = as.numeric(app_fit$bbAlphaHat),
+       lambda = as.numeric(app_fit$bbLambdaHat), sch = "app",
+       R1 = as.numeric(app_fit$bbRfirst)),
   list(m = 25,  k = 2, alpha = 5,    lambda = 2,     sch = "Early"),
   list(m = 25,  k = 5, alpha = 1,    lambda = 2,     sch = "Late"),
   list(m = 50,  k = 2, alpha = 2,    lambda = 2,     sch = "Middle"),
@@ -36,7 +42,8 @@ designs <- list(
 
 worst_H <- 0
 for (d in designs) {
-  R <- if (d$m == 9) c(3, rep(0, d$m - 1)) else make_scheme(d$m, d$sch)
+  R <- if (identical(d$sch, "app")) c(d$R1, rep(0, d$m - 1))
+         else make_scheme(d$m, d$sch)
   for (i in 1:40) {
     x   <- generate_pffc(d$m, d$k, R, d$alpha, d$lambda)
     par <- c(d$alpha, d$lambda)
@@ -54,10 +61,15 @@ cat(sprintf("  largest relative discrepancy over %d samples: %.3e\n",
 ## The same comparison at the fitted values on the two real datasets, which is
 ## where the reported standard errors actually come from.
 cat("\nAt the fitted values of the two applications:\n")
+## The ball bearing sample is not written out here.  It is constructed by
+## 10_realdata1_ballbearings.R and recorded in the macro file that script
+## writes; a copy typed into this check would go stale the moment the
+## construction changed, which is exactly what happened once already.
 apps <- list(
   list(name = "ball bearings",
-       x = c(41.52, 42.12, 48.40, 51.84, 51.96, 55.56, 68.64, 127.92, 173.40),
-       R = c(3, rep(0, 8)), k = 2),
+       x = as.numeric(strsplit(app_fit$bbSample, ",\\s*")[[1]]),
+       R = c(as.numeric(app_fit$bbRfirst), rep(0, as.numeric(app_fit$bbM) - 1)),
+       k = as.numeric(app_fit$bbK)),
   list(name = "guinea pigs",
        x = c(12, 15, 22, 24, 32, 34, 38, 38, 44, 53, 54, 54, 55, 56, 57, 58,
              65, 67, 70, 73, 81, 98, 109, 110, 131, 258),
@@ -80,7 +92,8 @@ for (a in apps) {
 cat("\nChecking the closed-form MLE of alpha given lambda ...\n")
 worst_a <- 0
 for (d in designs[1:3]) {
-  R <- if (d$m == 9) c(3, rep(0, d$m - 1)) else make_scheme(d$m, d$sch)
+  R <- if (identical(d$sch, "app")) c(d$R1, rep(0, d$m - 1))
+         else make_scheme(d$m, d$sch)
   for (i in 1:20) {
     x <- generate_pffc(d$m, d$k, R, d$alpha, d$lambda)
     for (lam in c(0.5, 1, 2, 10) * d$lambda) {
@@ -99,7 +112,8 @@ cat("\nChecking the fixed-point iteration of Eq. (15) ...\n")
 n_tot <- n_fp <- 0L
 worst_p <- 0
 for (d in designs) {
-  R <- if (d$m == 9) c(3, rep(0, d$m - 1)) else make_scheme(d$m, d$sch)
+  R <- if (identical(d$sch, "app")) c(d$R1, rep(0, d$m - 1))
+         else make_scheme(d$m, d$sch)
   for (i in 1:60) {
     x  <- generate_pffc(d$m, d$k, R, d$alpha, d$lambda)
     n_tot <- n_tot + 1L

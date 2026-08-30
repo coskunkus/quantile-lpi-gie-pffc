@@ -11,6 +11,14 @@
 ##
 ##  Runtime: roughly 20-40 minutes on a single core.  Set N_REP smaller for a
 ##  quick check; the numbers in the paper use N_REP = 2000.
+##
+##  REUSE MODE.  The tables and the macro file are written from the data frame
+##  the simulation produces, and that data frame is also saved to
+##  results/sim_bias_mse.csv.  If the option gie.reuse_results is set, the saved
+##  file is read instead of re-running the study, and everything after it is
+##  unchanged.  That is how run_paper.R rebuilds Tables 2 to 4 without spending
+##  half an hour on a simulation whose output is already shipped.  Running the
+##  script on its own simulates, as before.
 ################################################################################
 
 source("00_gie_pffc.R")
@@ -33,7 +41,14 @@ N_TICK    <- N_REP %/% TICK_EVERY   # the count actually delivered
 ## Run
 ## ---------------------------------------------------------------------------
 
+REUSE <- isTRUE(getOption("gie.reuse_results", FALSE))
+CSV   <- file.path(RESULTS_DIR, "sim_bias_mse.csv")
+if (REUSE && !file.exists(CSV))
+  stop("04_sim_bias_mse.R: reuse was asked for but ", CSV, " does not exist.\n",
+       "  Run this script without the option, or run run_simulations.R.")
+
 n_cell <- length(M_SET) * length(K_SET) * length(ALPHA_SET) * length(SCHEMES)
+if (!REUSE)
 cat(sprintf("%d configurations, %d replications each.\n", n_cell, N_REP))
 utils::flush.console()
 t_start <- Sys.time()
@@ -71,30 +86,49 @@ run_cell <- function(m, k, alpha, sch, p = NULL) {
 cells <- expand.grid(scheme = SCHEMES, alpha = ALPHA_SET, k = K_SET, m = M_SET,
                      stringsAsFactors = FALSE)
 
-res <- with_progress_bar(n_cell * N_TICK, function(p) {
-  lapply(seq_len(nrow(cells)), function(i)
-    run_cell(cells$m[i], cells$k[i], cells$alpha[i], cells$scheme[i], p))
-})
+if (REUSE) {
 
-cat(sprintf("\nFinished in %.1f minutes.\n",
-            as.numeric(difftime(Sys.time(), t_start, units = "mins"))))
+  cat("Reading the saved study from ", CSV, " rather than re-running it.\n",
+      sep = "")
+  out <- read.csv(CSV, stringsAsFactors = FALSE)
+  ## The saved file must describe the design this script declares, or the
+  ## tables written below would carry the wrong row labels.
+  have <- out[, c("m", "k", "alpha", "scheme")]
+  want <- cells[, c("m", "k", "alpha", "scheme")]
+  key  <- function(d) sort(do.call(paste, c(d[c("m", "k", "alpha", "scheme")],
+                                            sep = "|")))
+  if (!identical(key(have), key(want)))
+    stop("04_sim_bias_mse.R: ", basename(CSV), " does not match the design in ",
+         "this script.\n  Delete it and run run_simulations.R.")
+  out <- out[order(out$m, out$k, out$alpha, match(out$scheme, SCHEMES)), ]
 
-out <- do.call(rbind, res)
-out <- out[order(out$m, out$k, out$alpha, match(out$scheme, SCHEMES)), ]
+} else {
 
-for (i in seq_len(nrow(out)))
-  cat(sprintf("m=%3d k=%d alpha=%2d %-6s | q: %+.4f %.4f | m: %+.4f %.4f\n",
-              out$m[i], out$k[i], out$alpha[i], out$scheme[i],
-              out$Bias_q[i], out$MSE_q[i], out$Bias_m[i], out$MSE_m[i]))
+  res <- with_progress_bar(n_cell * N_TICK, function(p) {
+    lapply(seq_len(nrow(cells)), function(i)
+      run_cell(cells$m[i], cells$k[i], cells$alpha[i], cells$scheme[i], p))
+  })
 
-## Relative (scale-free) measures used in Table 4 and Figure 4.
-out$RB_q   <- out$Bias_q / abs(out$Cq_true)
-out$RMSE_q <- out$MSE_q  / out$Cq_true^2
-out$RB_m   <- out$Bias_m / abs(out$Cm_true)
-out$RMSE_m <- out$MSE_m  / out$Cm_true^2
-out$ratio  <- out$RMSE_m / out$RMSE_q
+  cat(sprintf("\nFinished in %.1f minutes.\n",
+              as.numeric(difftime(Sys.time(), t_start, units = "mins"))))
 
-write.csv(out, file.path(RESULTS_DIR, "sim_bias_mse.csv"), row.names = FALSE)
+  out <- do.call(rbind, res)
+  out <- out[order(out$m, out$k, out$alpha, match(out$scheme, SCHEMES)), ]
+
+  for (i in seq_len(nrow(out)))
+    cat(sprintf("m=%3d k=%d alpha=%2d %-6s | q: %+.4f %.4f | m: %+.4f %.4f\n",
+                out$m[i], out$k[i], out$alpha[i], out$scheme[i],
+                out$Bias_q[i], out$MSE_q[i], out$Bias_m[i], out$MSE_m[i]))
+
+  ## Relative (scale-free) measures used in Table 4 and Figure 4.
+  out$RB_q   <- out$Bias_q / abs(out$Cq_true)
+  out$RMSE_q <- out$MSE_q  / out$Cq_true^2
+  out$RB_m   <- out$Bias_m / abs(out$Cm_true)
+  out$RMSE_m <- out$MSE_m  / out$Cm_true^2
+  out$ratio  <- out$RMSE_m / out$RMSE_q
+
+  write.csv(out, CSV, row.names = FALSE)
+}
 
 cat("\nTrue index values used:\n")
 print(unique(out[, c("alpha", "Cm_true", "Cq_true")]))
@@ -169,7 +203,7 @@ wl("\\begin{table}[H]")
 wl("\\centering")
 wl("\\caption{Scale-free comparison of the two estimators: relative bias ",
    "$\\mathrm{RB}=\\mathrm{Bias}(\\widehat{C})/|C|$ and relative mean squared ",
-   "error $\\mathrm{RMSE}=\\mathrm{MSE}(\\widehat{C})/C^{2}$, computed from ",
+   "error $\\mathrm{RelMSE}=\\mathrm{MSE}(\\widehat{C})/C^{2}$, computed from ",
    "Tables \\ref{T:sim_moment} and \\ref{T:sim_quantile}. Smaller values ",
    "indicate better relative performance. The final column is the ratio of the ",
    "two relative MSEs; values above one favour the quantile-based index.}")
@@ -181,8 +215,8 @@ wl(" & & & & \\multicolumn{2}{c}{Moment-based ($C_L^{M}$)} & ",
    "\\multicolumn{2}{c}{Quantile-based ($C_L^{\\xi}$)} & \\\\")
 wl("\\cmidrule(lr){5-6} \\cmidrule(lr){7-8}")
 wl("$m$ & $k$ & $\\alpha$ & Scheme & \\multicolumn{1}{c}{RB} & ",
-   "\\multicolumn{1}{c}{RMSE} & \\multicolumn{1}{c}{RB} & ",
-   "\\multicolumn{1}{c}{RMSE} & \\multicolumn{1}{c}{Ratio} \\\\")
+   "\\multicolumn{1}{c}{RelMSE} & \\multicolumn{1}{c}{RB} & ",
+   "\\multicolumn{1}{c}{RelMSE} & \\multicolumn{1}{c}{Ratio} \\\\")
 wl("\\midrule")
 blk <- 0
 for (i in seq_len(nrow(o))) {
@@ -222,4 +256,4 @@ write_macros(file.path(TABLES_DIR, "values_sim.tex"), list(
 
 cat("\nWrote tab_sim_moment.tex, tab_sim_quantile.tex and tab_relative.tex to",
     TABLES_DIR, "\n")
-cat("Wrote", file.path(RESULTS_DIR, "sim_bias_mse.csv"), "\n")
+cat(if (REUSE) "Read" else "Wrote", CSV, "\n")

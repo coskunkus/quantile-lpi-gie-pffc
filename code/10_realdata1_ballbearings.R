@@ -251,8 +251,8 @@ wl("\\begin{table}[H]"); wl("\\centering")
 wl(sprintf(paste0("\\caption{Point estimates and 95\\%% confidence intervals for ",
                   "$C_{L}^{M}$ and $C_{L}^{\\xi}$ using the ball bearings data ",
                   "($L=%g$), with $B=%d$ bootstrap resamples.}"), L, B_BOOT))
-wl("\\label{T3}")
-wl("\\begin{tabular}{l ccc c ccc}"); wl("\\toprule")
+wl("\\label{T3}"); wl("\\small")
+wl("\\begin{tabular*}{\\textwidth}{@{\\extracolsep{\\fill}}l ccc c ccc}"); wl("\\toprule")
 wl("\\multirow{2}{*}{CI Method} & \\multicolumn{3}{c}{Moment-based ($C_{L}^{M}$)} & ",
    "\\phantom{abc} & \\multicolumn{3}{c}{Quantile-based ($C_{L}^{\\xi}$)} \\\\")
 wl("\\cmidrule(r){2-4} \\cmidrule(l){6-8}")
@@ -265,7 +265,7 @@ for (i in seq_len(nrow(tab)))
   wl(sprintf("%-3s & %.4f & %.4f & %.4f && %.4f & %.4f & %.4f \\\\",
              rownames(tab)[i], tab[i, "M_Lower"], tab[i, "M_Upper"], tab[i, "M_Length"],
              tab[i, "Q_Lower"], tab[i, "Q_Upper"], tab[i, "Q_Length"]))
-wl("\\bottomrule"); wl("\\end{tabular}"); wl("\\end{table}")
+wl("\\bottomrule"); wl("\\end{tabular*}"); wl("\\end{table}")
 close(con)
 cat("Wrote", file.path(TABLES_DIR, "tab_realdata1.tex"), "\n")
 

@@ -191,8 +191,8 @@ write.csv(out, file.path(RESULTS_DIR, "sim_ci.csv"), row.names = FALSE)
 write_ci_table <- function(o, suffix, path, label, caption) {
   con <- base::file(path, open = "wt"); wl <- function(...) writeLines(paste0(...), con)
   wl("\\begin{table}[H]"); wl("\\centering")
-  wl("\\caption{", caption, "}"); wl("\\label{", label, "}"); wl("\\scriptsize")
-  wl("\\begin{tabular}{lll l rr rr rr}"); wl("\\toprule")
+  wl("\\caption{", caption, "}"); wl("\\label{", label, "}"); wl("\\small")
+  wl("\\begin{tabular*}{\\textwidth}{@{\\extracolsep{\\fill}}lll l rr rr rr}"); wl("\\toprule")
   wl(" & & & & \\multicolumn{2}{c}{ACI} & \\multicolumn{2}{c}{PB} & \\multicolumn{2}{c}{NB} \\\\")
   wl("\\cmidrule(lr){5-6} \\cmidrule(lr){7-8} \\cmidrule(lr){9-10}")
   wl("$m$ & $k$ & $\\alpha$ & Scheme",
@@ -211,7 +211,7 @@ write_ci_table <- function(o, suffix, path, label, caption) {
                o[[paste0("AL_PB_",  suffix)]][i], o[[paste0("CP_PB_",  suffix)]][i],
                o[[paste0("AL_NB_",  suffix)]][i], o[[paste0("CP_NB_",  suffix)]][i]))
   }
-  wl("\\bottomrule"); wl("\\end{tabular}"); wl("\\end{table}")
+  wl("\\bottomrule"); wl("\\end{tabular*}"); wl("\\end{table}")
   close(con)
 }
 

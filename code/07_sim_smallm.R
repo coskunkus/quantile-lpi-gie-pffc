@@ -146,7 +146,7 @@ wl(sprintf(paste0("\\caption{Small-sample performance at the design of the first
            K, R_FIRST, ALPHA, LAMBDA, L_LIMIT, L_LIMIT / LAMBDA, C_true,
            N_REP_PT, N_REP_CI, B_BOOT))
 wl("\\label{T:smallm}"); wl("\\small")
-wl("\\begin{tabular}{l rr rr rr rr}"); wl("\\toprule")
+wl("\\begin{tabular*}{\\textwidth}{@{\\extracolsep{\\fill}}l rr rr rr rr}"); wl("\\toprule")
 wl(" & \\multicolumn{2}{c}{Point estimator} & \\multicolumn{2}{c}{ACI} & ",
    "\\multicolumn{2}{c}{PB} & \\multicolumn{2}{c}{NB} \\\\")
 wl("\\cmidrule(lr){2-3} \\cmidrule(lr){4-5} \\cmidrule(lr){6-7} \\cmidrule(lr){8-9}")
@@ -158,7 +158,7 @@ for (i in seq_len(nrow(out)))
              out$m[i], out$Bias[i], out$MSE[i],
              out$AL_ACI[i], out$CP_ACI[i], out$AL_PB[i], out$CP_PB[i],
              out$AL_NB[i], out$CP_NB[i]))
-wl("\\bottomrule"); wl("\\end{tabular}"); wl("\\end{table}")
+wl("\\bottomrule"); wl("\\end{tabular*}"); wl("\\end{table}")
 close(con)
 
 ## Numbers quoted in the running text of Sections 5.4 and 6.1.

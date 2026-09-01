@@ -44,8 +44,8 @@ wl(sprintf(paste0("\\caption{Translation constants $\\kappa=\\sigma/\\mathrm{IQR
                   "$C_{0}^{\\xi}=\\kappa C_{0}^{M}-\\delta$ corresponding to the ",
                   "moment-based standard $C_{0}^{M}=%.1f$. Both constants are free of ",
                   "$\\lambda$ and of $L$. The final row is the normal reference.}"), C0M))
-wl("\\label{T:kappa}")
-wl("\\begin{tabular}{l ccc}"); wl("\\toprule")
+wl("\\label{T:kappa}"); wl("\\small")
+wl("\\begin{tabular*}{\\textwidth}{@{\\extracolsep{\\fill}}l ccc}"); wl("\\toprule")
 wl(sprintf("$\\alpha$ & $\\kappa$ & $\\delta$ & $C_{0}^{\\xi}$ for $C_{0}^{M}=%.1f$ \\\\", C0M))
 wl("\\midrule")
 for (i in seq_along(ALPHAS))
@@ -54,7 +54,7 @@ for (i in seq_along(ALPHAS))
 wl("\\midrule")
 j <- nrow(tab)
 wl(sprintf("Normal   & %.4f & 0      & %.4f \\\\", tab$kappa[j], tab$C0xi[j]))
-wl("\\bottomrule"); wl("\\end{tabular}"); wl("\\end{table}")
+wl("\\bottomrule"); wl("\\end{tabular*}"); wl("\\end{table}")
 close(con)
 cat("Wrote", file.path(TABLES_DIR, "tab_translation.tex"), "\n")
 

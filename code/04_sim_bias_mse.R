@@ -155,7 +155,7 @@ write_bias_mse_table <- function(o, bias_col, mse_col, path, label, caption) {
   con <- base::file(path, open = "wt"); wl <- function(...) writeLines(paste0(...), con)
   wl("\\begin{table}[H]"); wl("\\centering")
   wl("\\caption{", caption, "}"); wl("\\label{", label, "}"); wl("\\small")
-  wl("\\begin{tabular}{lll rr rr rr rr}"); wl("\\toprule")
+  wl("\\begin{tabular*}{\\textwidth}{@{\\extracolsep{\\fill}}lll rr rr rr rr}"); wl("\\toprule")
   wl(" & & & \\multicolumn{2}{c}{Early} & \\multicolumn{2}{c}{Middle} & ",
      "\\multicolumn{2}{c}{Late} & \\multicolumn{2}{c}{Equal} \\\\")
   wl("\\cmidrule(lr){4-5} \\cmidrule(lr){6-7} \\cmidrule(lr){8-9} \\cmidrule(lr){10-11}")
@@ -182,7 +182,7 @@ write_bias_mse_table <- function(o, bias_col, mse_col, path, label, caption) {
       }
     }
   }
-  wl("\\bottomrule"); wl("\\end{tabular}"); wl("\\end{table}")
+  wl("\\bottomrule"); wl("\\end{tabular*}"); wl("\\end{table}")
   close(con)
 }
 
@@ -208,8 +208,8 @@ wl("\\caption{Scale-free comparison of the two estimators: relative bias ",
    "indicate better relative performance. The final column is the ratio of the ",
    "two relative MSEs; values above one favour the quantile-based index.}")
 wl("\\label{T:relative}")
-wl("\\scriptsize")
-wl("\\begin{tabular}{lll l rr rr r}")
+wl("\\small")
+wl("\\begin{tabular*}{\\textwidth}{@{\\extracolsep{\\fill}}lll l rr rr r}")
 wl("\\toprule")
 wl(" & & & & \\multicolumn{2}{c}{Moment-based ($C_L^{M}$)} & ",
    "\\multicolumn{2}{c}{Quantile-based ($C_L^{\\xi}$)} & \\\\")
@@ -232,7 +232,7 @@ for (i in seq_len(nrow(o))) {
              c1, c2, c3, o$scheme[i],
              o$RB_m[i], o$RMSE_m[i], o$RB_q[i], o$RMSE_q[i], o$ratio[i]))
 }
-wl("\\bottomrule"); wl("\\end{tabular}"); wl("\\end{table}")
+wl("\\bottomrule"); wl("\\end{tabular*}"); wl("\\end{table}")
 close(con)
 
 ## ---- Numbers quoted in the running text of Section 5.1 --------------------

@@ -145,7 +145,7 @@ wl(sprintf(paste0("\\caption{Small-sample performance at the design of the first
                   "from %d replications with $B=%d$.}"),
            K, R_FIRST, ALPHA, LAMBDA, L_LIMIT, L_LIMIT / LAMBDA, C_true,
            N_REP_PT, N_REP_CI, B_BOOT))
-wl("\\label{T:smallm}"); wl("\\small")
+wl("\\label{T:smallm}"); wl("\\scriptsize")
 wl("\\begin{tabular*}{\\textwidth}{@{\\extracolsep{\\fill}}l rr rr rr rr}"); wl("\\toprule")
 wl(" & \\multicolumn{2}{c}{Point estimator} & \\multicolumn{2}{c}{ACI} & ",
    "\\multicolumn{2}{c}{PB} & \\multicolumn{2}{c}{NB} \\\\")

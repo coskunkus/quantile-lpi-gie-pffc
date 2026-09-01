@@ -251,7 +251,7 @@ wl("\\begin{table}[H]"); wl("\\centering")
 wl(sprintf(paste0("\\caption{Point estimates and 95\\%% confidence intervals for ",
                   "$C_{L}^{M}$ and $C_{L}^{\\xi}$ using the ball bearings data ",
                   "($L=%g$), with $B=%d$ bootstrap resamples.}"), L, B_BOOT))
-wl("\\label{T3}"); wl("\\small")
+wl("\\label{T3}"); wl("\\scriptsize")
 wl("\\begin{tabular*}{\\textwidth}{@{\\extracolsep{\\fill}}l ccc c ccc}"); wl("\\toprule")
 wl("\\multirow{2}{*}{CI Method} & \\multicolumn{3}{c}{Moment-based ($C_{L}^{M}$)} & ",
    "\\phantom{abc} & \\multicolumn{3}{c}{Quantile-based ($C_{L}^{\\xi}$)} \\\\")

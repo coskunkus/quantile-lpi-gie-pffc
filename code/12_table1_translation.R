@@ -44,7 +44,7 @@ wl(sprintf(paste0("\\caption{Translation constants $\\kappa=\\sigma/\\mathrm{IQR
                   "$C_{0}^{\\xi}=\\kappa C_{0}^{M}-\\delta$ corresponding to the ",
                   "moment-based standard $C_{0}^{M}=%.1f$. Both constants are free of ",
                   "$\\lambda$ and of $L$. The final row is the normal reference.}"), C0M))
-wl("\\label{T:kappa}"); wl("\\small")
+wl("\\label{T:kappa}"); wl("\\scriptsize")
 wl("\\begin{tabular*}{\\textwidth}{@{\\extracolsep{\\fill}}l ccc}"); wl("\\toprule")
 wl(sprintf("$\\alpha$ & $\\kappa$ & $\\delta$ & $C_{0}^{\\xi}$ for $C_{0}^{M}=%.1f$ \\\\", C0M))
 wl("\\midrule")

@@ -108,7 +108,7 @@ wl(sprintf(paste0("\\caption{Point estimate and 95\\%% confidence intervals for 
                   "$C_{L}^{\\xi}$ using the guinea pig survival data ($L=%g$), with ",
                   "$B=%d$ bootstrap resamples. The moment-based index is undefined ",
                   "here because $\\widehat{\\alpha}<2$.}"), L, B_BOOT))
-wl("\\label{T4}"); wl("\\small")
+wl("\\label{T4}"); wl("\\scriptsize")
 wl("\\begin{tabular*}{\\textwidth}{@{\\extracolsep{\\fill}}l ccc}"); wl("\\toprule")
 wl("\\multirow{2}{*}{CI Method} & \\multicolumn{3}{c}{Quantile-based ($C_{L}^{\\xi}$)} \\\\")
 wl("\\cmidrule(r){2-4}")

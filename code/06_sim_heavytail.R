@@ -181,7 +181,7 @@ wl(sprintf(paste0("\\caption{Bias and MSE of the MLE of the quantile-based index
                   "$\\alpha=1$ and $C_L^{\\xi}=%.4f$ for $\\alpha=2$. Based on %d ",
                   "Monte Carlo replications.}"),
            LAMBDA, L_LIMIT, L_RATIO, C1, C2, N_REP_PT))
-wl("\\label{T:ht_point}"); wl("\\small")
+wl("\\label{T:ht_point}"); wl("\\scriptsize")
 wl("\\begin{tabular*}{\\textwidth}{@{\\extracolsep{\\fill}}lll rr rr rr rr}"); wl("\\toprule")
 wl(" & & & \\multicolumn{2}{c}{Early} & \\multicolumn{2}{c}{Middle} & ",
    "\\multicolumn{2}{c}{Late} & \\multicolumn{2}{c}{Equal} \\\\")
@@ -216,7 +216,7 @@ wl(sprintf(paste0("\\caption{Average lengths (AL) and coverage probabilities (CP
                   "designs, $\\lambda=%g$ and $L=%g$. Based on %d Monte Carlo ",
                   "replications with $B=%d$ bootstrap resamples.}"),
            LAMBDA, L_LIMIT, N_REP_CI, B_BOOT))
-wl("\\label{T:ht_ci}"); wl("\\small")
+wl("\\label{T:ht_ci}"); wl("\\scriptsize")
 wl("\\begin{tabular*}{\\textwidth}{@{\\extracolsep{\\fill}}lll l rr rr rr}"); wl("\\toprule")
 wl(" & & & & \\multicolumn{2}{c}{ACI} & \\multicolumn{2}{c}{PB} & \\multicolumn{2}{c}{NB} \\\\")
 wl("\\cmidrule(lr){5-6} \\cmidrule(lr){7-8} \\cmidrule(lr){9-10}")

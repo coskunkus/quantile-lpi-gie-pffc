@@ -154,7 +154,7 @@ o   <- out[ord, ]
 write_bias_mse_table <- function(o, bias_col, mse_col, path, label, caption) {
   con <- base::file(path, open = "wt"); wl <- function(...) writeLines(paste0(...), con)
   wl("\\begin{table}[H]"); wl("\\centering")
-  wl("\\caption{", caption, "}"); wl("\\label{", label, "}"); wl("\\small")
+  wl("\\caption{", caption, "}"); wl("\\label{", label, "}"); wl("\\scriptsize")
   wl("\\begin{tabular*}{\\textwidth}{@{\\extracolsep{\\fill}}lll rr rr rr rr}"); wl("\\toprule")
   wl(" & & & \\multicolumn{2}{c}{Early} & \\multicolumn{2}{c}{Middle} & ",
      "\\multicolumn{2}{c}{Late} & \\multicolumn{2}{c}{Equal} \\\\")
@@ -208,7 +208,7 @@ wl("\\caption{Scale-free comparison of the two estimators: relative bias ",
    "indicate better relative performance. The final column is the ratio of the ",
    "two relative MSEs; values above one favour the quantile-based index.}")
 wl("\\label{T:relative}")
-wl("\\small")
+wl("\\scriptsize")
 wl("\\begin{tabular*}{\\textwidth}{@{\\extracolsep{\\fill}}lll l rr rr r}")
 wl("\\toprule")
 wl(" & & & & \\multicolumn{2}{c}{Moment-based ($C_L^{M}$)} & ",

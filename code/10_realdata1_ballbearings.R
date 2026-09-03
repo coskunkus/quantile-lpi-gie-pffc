@@ -248,7 +248,7 @@ cat("\nSaved", file.path(RESULTS_DIR, "realdata1.rds"), "\n")
 con <- base::file(file.path(TABLES_DIR, "tab_realdata1.tex"), open = "wt")
 wl  <- function(...) writeLines(paste0(...), con)
 wl("\\begin{table}[H]"); wl("\\centering")
-wl(sprintf(paste0("\\caption{Point estimates and 95\\%% confidence intervals for ",
+wl(sprintf(paste0("\\caption{Point estimates and 95\\%% CIs for ",
                   "$C_{L}^{M}$ and $C_{L}^{\\xi}$ using the ball bearings data ",
                   "($L=%g$), with $B=%d$ bootstrap resamples.}"), L, B_BOOT))
 wl("\\label{T3}"); wl("\\scriptsize")

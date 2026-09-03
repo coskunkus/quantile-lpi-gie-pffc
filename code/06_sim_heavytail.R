@@ -211,8 +211,8 @@ close(con)
 con <- base::file(file.path(TABLES_DIR, "tab_heavytail_ci.tex"), open = "wt")
 wl <- function(...) writeLines(paste0(...), con)
 wl("\\begin{table}[H]"); wl("\\centering")
-wl(sprintf(paste0("\\caption{Average lengths (AL) and coverage probabilities (CP) of ",
-                  "the 95\\%% confidence intervals for $C_L^{\\xi}$ in the heavy-tailed ",
+wl(sprintf(paste0("\\caption{ALs and CPs of ",
+                  "the 95\\%% CIs for $C_L^{\\xi}$ in the heavy-tailed ",
                   "designs, $\\lambda=%g$ and $L=%g$. Based on %d Monte Carlo ",
                   "replications with $B=%d$ bootstrap resamples.}"),
            LAMBDA, L_LIMIT, N_REP_CI, B_BOOT))

@@ -104,7 +104,7 @@ cat("Saved", file.path(RESULTS_DIR, "realdata2.rds"), "\n")
 con <- base::file(file.path(TABLES_DIR, "tab_realdata2.tex"), open = "wt")
 wl  <- function(...) writeLines(paste0(...), con)
 wl("\\begin{table}[H]"); wl("\\centering")
-wl(sprintf(paste0("\\caption{Point estimate and 95\\%% confidence intervals for ",
+wl(sprintf(paste0("\\caption{Point estimate and 95\\%% CIs for ",
                   "$C_{L}^{\\xi}$ using the guinea pig survival data ($L=%g$), with ",
                   "$B=%d$ bootstrap resamples. The moment-based index is undefined ",
                   "here because $\\widehat{\\alpha}<2$.}"), L, B_BOOT))

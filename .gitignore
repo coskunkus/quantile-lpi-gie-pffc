@@ -1,0 +1,36 @@
+# The scripts write their LaTeX output into tables/ and figures/.  Those are
+# inputs to the manuscript, which is not part of this repository, so they are
+# regenerated rather than tracked.
+tables/*
+figures/*
+!tables/.gitkeep
+!figures/.gitkeep
+
+# results/ IS tracked: it is the raw output of the four Monte Carlo
+# studies, which take hours, and it is the record of the run the paper
+# reports.  Nothing reads it back.  See README.md.
+
+# Stray output from interactive R sessions or LaTeX runs inside this folder.
+# This repository holds code only: it tracks no figure and no document, so any
+# pdf or eps here is a leftover, not something to publish.
+*.pdf
+*.eps
+
+# Backups and archives of earlier runs.  results/ itself IS tracked; a zip of
+# it is a private snapshot and does not belong in the repository.
+*.zip
+
+# R and LaTeX leftovers
+.Rhistory
+.RData
+.Rproj.user/
+*.Rproj
+*.aux
+*.log
+*.out
+*.toc
+*.bbl
+*.blg
+*.synctex.gz
+*.fdb_latexmk
+*.fls
